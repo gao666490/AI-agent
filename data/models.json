@@ -202,7 +202,7 @@
         "anthropicCompatible": "https://tokenhub.tencentmaas.com",
         "auth": "Bearer <key>"
       },
-      "models": ["hy3", "hy-mt2-pro", "hy-mt2-plus", "hy-mt2-lite"],
+      "models": ["hy3", "hy-mt2-pro", "hy-mt2-plus", "hy-mt2-lite", "hunyuan-role-latest"],
       "compat": {
         "claude-code": "anthropic-compatible",
         "codex": "openai-compatible",
