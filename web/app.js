@@ -135,13 +135,18 @@ viewRenderers.permission = () => {
   const p = state.plan;
   if (!p) return `<div class="loading">…</div>`;
   const badge = p.verified ? '<span class="badge ok">verified</span>' : '<span class="badge warn">unverified</span>';
+  const stepCards = (p.steps || []).map((s, i) => `
+    <div class="card" style="margin-bottom:10px">
+      <h3>${i + 1}. ${esc(s.title || s.id)}</h3>
+      <div class="plan-command">$ ${esc(s.command)}</div>
+    </div>`).join('') || `<div class="notice">${t('agent.plan.notAvailable')}</div>`;
   return `
   <div class="card">
     <h2 data-i18n="permission.title">${t('permission.title')}</h2>
     <p class="subtitle" data-i18n="permission.subtitle">${t('permission.subtitle')}</p>
     ${p.verified ? '' : `<div class="notice" data-i18n="agent.plan.unverifiedNote">${t('agent.plan.unverifiedNote')}</div>`}
     <h3>${t('agent.plan')} ${badge}</h3>
-    ${p.commands.map((c) => `<div class="plan-command">$ ${esc(c)}</div>`).join('') || '<div class="notice">' + t('agent.plan.notAvailable') + '</div>'}
+    ${stepCards}
     <p style="margin-top:12px"><label>${t('agent.plan.requires')}</label><span>${esc((p.requires || []).join(', ') || '—')}</span></p>
     <label>${t('agent.plan.workdir')}</label><div class="code-block">${esc(p.defaultWorkDir || '—')}</div>
     <div class="actions">

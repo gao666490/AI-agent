@@ -26,9 +26,13 @@ export async function printDryRun() {
   console.log(t(dict, 'dryrun.agents').replace('{platform}', platformKey));
   for (const agent of agents) {
     const plan = planForAgent(agent, platformKey);
-    const cmd = plan.commands[0] ? plan.commands[0].slice(0, 110) + (plan.commands[0].length > 110 ? '…' : '') : '(no recipe)';
-    console.log(`  - ${agent.name.padEnd(14)} [${plan.mode}] ${plan.verified ? 'verified' : 'UNVERIFIED'}`);
-    console.log(`      ${cmd}`);
+    const lines = [];
+    for (const s of plan.steps) {
+      const cmd = s.command.length > 96 ? s.command.slice(0, 96) + '…' : s.command;
+      lines.push(`      ${s.id}: ${cmd}`);
+    }
+    console.log(`  - ${agent.name.padEnd(14)} [${plan.mode}] ${plan.verified ? 'verified' : 'UNVERIFIED'}${plan.steps.length > 1 ? ` (${plan.steps.length} steps)` : ''}`);
+    for (const l of lines) console.log(l);
   }
   console.log('');
   console.log(t(dict, 'dryrun.nothingExecuted'));
