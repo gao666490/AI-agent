@@ -6,6 +6,7 @@ import { loadModels } from './models.js';
 import { loadDict } from './i18n.js';
 import { openBrowser } from './browser.js';
 import { printDryRun } from './dryrun.js';
+import { printDoctor } from './doctor.js';
 import { log } from './log.js';
 
 const HELP = `agent-guide — 目录驱动的跨平台 Agent 安装向导 / directory-driven agent installer wizard
@@ -29,6 +30,7 @@ export function parseArgs(argv) {
     if (a === '--help' || a === '-h') opts.help = true;
     else if (a === '--dry-run') opts.dryRun = true;
     else if (a === '--no-open') opts.noOpen = true;
+    else if (a === 'doctor') opts.doctor = true;
     else if (a === '--port') opts.port = parseInt(argv[++i], 10);
     else if (a === '--lang') opts.lang = argv[++i];
     else if (a.startsWith('--port=')) opts.port = parseInt(a.slice(7), 10);
@@ -49,6 +51,10 @@ export async function main(argv) {
   }
   if (opts.dryRun) {
     await printDryRun();
+    return;
+  }
+  if (opts.doctor) {
+    await printDoctor();
     return;
   }
 

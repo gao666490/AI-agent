@@ -112,9 +112,84 @@
     { "id": "doubao", "name": "豆包 (火山方舟 Ark)", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
     { "id": "minimax", "name": "MiniMax", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
     { "id": "iflytek", "name": "讯飞星火", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "hunyuan", "name": "腾讯混元", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "stepfun", "name": "阶跃星辰", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "baichuan", "name": "百川", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    {
+      "id": "hunyuan",
+      "name": "腾讯混元 (TokenHub)",
+      "region": "cn",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "原混元平台 2026-09-30 全面停服，端点已迁移 TokenHub：https://tokenhub.tencentmaas.com/v1（广州）/ tokenhub-intl（新加坡）。",
+        "模型已更换为 hy3 系列（hunyuan-turbos/standard 等旧名 2026-06-22 下线）。简单 Bearer Key，无需腾讯云签名；官方提供 Claude Code/Codex 接入指南。"
+      ],
+      "api": {
+        "openaiCompatible": "https://tokenhub.tencentmaas.com/v1",
+        "anthropicCompatible": "https://tokenhub.tencentmaas.com",
+        "auth": "Bearer <key>"
+      },
+      "models": ["hy3", "hy-mt2-pro", "hy-mt2-plus", "hy-mt2-lite"],
+      "compat": {
+        "claude-code": "anthropic-compatible",
+        "codex": "openai-compatible",
+        "hermes": "openai-compatible",
+        "gemini": "unsupported",
+        "aider": "openai-compatible",
+        "opencode": "openai-compatible",
+        "goose": "openai-compatible"
+      }
+    },
+    {
+      "id": "stepfun",
+      "name": "阶跃星辰 StepFun",
+      "region": "cn",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "OpenAI 兼容 https://api.stepfun.com/v1（官方快速开始确认）；Anthropic 兼容 base https://api.stepfun.com（自动拼 /v1/messages）。",
+        "step-2/step-1 旧系列已下线，当前 step-3.x 系列。官方提供 Claude Code/OpenClaw/Cline 接入指南。"
+      ],
+      "api": {
+        "openaiCompatible": "https://api.stepfun.com/v1",
+        "anthropicCompatible": "https://api.stepfun.com",
+        "auth": "Bearer <key>"
+      },
+      "models": ["step-3.7-flash", "step-3.5-flash", "step-3.5-flash-2603", "step-1o-turbo-vision"],
+      "compat": {
+        "claude-code": "anthropic-compatible",
+        "codex": "openai-compatible",
+        "hermes": "openai-compatible",
+        "gemini": "unsupported",
+        "aider": "openai-compatible",
+        "opencode": "openai-compatible",
+        "goose": "openai-compatible"
+      }
+    },
+    {
+      "id": "baichuan",
+      "name": "百川 Baichuan",
+      "region": "cn",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "OpenAI 兼容 https://api.baichuan-ai.com/v1（在线确认，401 需有效 Key）；无 Anthropic 兼容端点（Claude Code 不可直接接入）。",
+        "Baichuan4-Turbo 等仍在售，新增 M2/M3 系列；ToS 正文未能核验，接入前建议联系 openapi@baichuan-inc.com 确认。"
+      ],
+      "api": {
+        "openaiCompatible": "https://api.baichuan-ai.com/v1",
+        "anthropicCompatible": null,
+        "auth": "Bearer <key>"
+      },
+      "models": ["Baichuan-M3-Plus", "Baichuan-M3", "Baichuan-M2-Plus", "Baichuan4-Turbo", "Baichuan4-Air", "Baichuan4", "Baichuan3-Turbo"],
+      "compat": {
+        "claude-code": "unsupported",
+        "codex": "openai-compatible",
+        "hermes": "openai-compatible",
+        "gemini": "unsupported",
+        "aider": "openai-compatible",
+        "opencode": "openai-compatible",
+        "goose": "openai-compatible"
+      }
+    },
     { "id": "openai", "name": "OpenAI", "region": "global", "verified": false, "api": { "openaiCompatible": "https://api.openai.com/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": ["gpt-4o", "gpt-4o-mini", "o3", "o4-mini"], "compat": { "codex": "openai-compatible", "hermes": "openai-compatible", "aider": "openai-compatible", "opencode": "openai-compatible", "goose": "openai-compatible", "claude-code": "unsupported", "gemini": "unsupported" } },
     { "id": "anthropic", "name": "Anthropic Claude", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": "https://api.anthropic.com", "auth": "x-api-key <key>" }, "models": ["claude-opus-4-1", "claude-sonnet-4-5", "claude-haiku-4-5"], "compat": { "claude-code": "native", "codex": "unsupported", "hermes": "unsupported", "gemini": "unsupported", "aider": "unsupported", "opencode": "unsupported", "goose": "unsupported" } },
     { "id": "google", "name": "Google Gemini", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": ["gemini-2.5-pro", "gemini-2.5-flash"], "compat": { "gemini": "native", "claude-code": "unsupported", "codex": "unsupported", "hermes": "unsupported", "aider": "unsupported", "opencode": "unsupported", "goose": "unsupported" } },
