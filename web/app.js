@@ -187,6 +187,42 @@ viewRenderers.finish = () => `
     </div>
   </div>`;
 
+viewRenderers.prereqs = async () => {
+  const plan = state.plan;
+  if (!plan || plan.requires.length === 0) {
+    return `
+    <div class="card">
+      <h2 data-i18n="prereqs.title">${t('prereqs.title')}</h2>
+      <p class="subtitle" data-i18n="prereqs.none">${t('prereqs.none')}</p>
+      <div class="actions">
+        <button class="btn" data-goto="folder" data-i18n="common.back">${t('common.back')}</button>
+        <button class="btn primary" data-goto="install" data-i18n="common.continue">${t('common.continue')}</button>
+      </div>
+    </div>`;
+  }
+  const data = await api(`/api/prereqs`);
+  const rows = data.items.map((r) => `
+    <tr>
+      <td>${esc(r.name)}</td>
+      <td><span class="badge ${r.present ? 'ok' : 'err'}">${r.present ? '✓' : '✗'}</span> ${esc(r.version || '—')}</td>
+      <td>${r.present ? '' : `<span class="badge warn">${esc(r.hint)}</span>`}</td>
+    </tr>`).join('');
+  return `
+  <div class="card">
+    <h2 data-i18n="prereqs.title">${t('prereqs.title')}</h2>
+    <p class="subtitle" data-i18n="prereqs.subtitle">${t('prereqs.subtitle')}</p>
+    <table class="detect-table">
+      <tr><td>${t('common.status')}</td><td>${t('detect.os')}</td><td></td></tr>
+      ${rows}
+    </table>
+    ${data.ok ? '' : `<div class="notice">${t('prereqs.warn')}</div>`}
+    <div class="actions">
+      <button class="btn" data-goto="folder" data-i18n="common.back">${t('common.back')}</button>
+      <button class="btn primary" data-goto="install" data-i18n="common.continue">${t('common.continue')}</button>
+    </div>
+  </div>`;
+};
+
 viewRenderers.install = () => {
   const plan = state.plan;
   if (!plan || !plan.steps || plan.steps.length === 0) {
@@ -392,7 +428,8 @@ function bindActions() {
   if (folderBtn) {
     folderBtn.addEventListener('click', () => {
       state.workDir = document.getElementById('workdir')?.value?.trim() || null;
-      goto('install');
+      // 前置环境确认页仅当配方声明 requires 时出现（设计 §6 第 6 步）
+      goto((state.plan?.requires?.length || 0) > 0 ? 'prereqs' : 'install');
     });
   }
 

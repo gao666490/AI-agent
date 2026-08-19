@@ -33,7 +33,7 @@ async function runResult(cmd, args = [], timeout = 8000, opts = {}) {
 }
 
 /** Quiet probe: trimmed stdout or null on any failure. */
-async function run(cmd, args = [], timeout = 8000, opts = {}) {
+export async function run(cmd, args = [], timeout = 8000, opts = {}) {
   const r = await runResult(cmd, args, timeout, opts);
   return r.code === 0 ? r.out : null;
 }

@@ -10,6 +10,7 @@ import { loadDict } from './i18n.js';
 import { tailLog } from './log.js';
 import { recipePlatform } from './detect.js';
 import { runCommand } from './exec.js';
+import { checkPrereqs } from './prereqs.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const webDir = path.join(here, '..', 'web');
@@ -170,6 +171,16 @@ async function routeApi(req, res, pathname, url, ctx) {
     ctx.state = confirmStep(ctx.state, confirmMatch[1]);
     ctx.state = await saveState(ctx.state);
     return send(res, 200, { ok: true, step: confirmMatch[1], at: ctx.state.confirmed.at(-1)?.at });
+  }
+
+  // --- prerequisites (design §6 page 6) ---------------------------------
+  if (pathname === '/api/prereqs' && method === 'GET') {
+    const agent = (ctx.agents || []).find((a) => a.id === ctx.state.agentId);
+    const platformKey = url.searchParams.get('platform') || ctx.state.platform || recipePlatform(ctx.env?.platform);
+    const plan = agent ? planForAgent(agent, platformKey, ctx.state.mode) : null;
+    const requires = plan?.requires || [];
+    const check = await checkPrereqs(requires, ctx.env);
+    return send(res, 200, { requires, ...check });
   }
 
   // --- M2: step execution (SSE stream) ----------------------------------

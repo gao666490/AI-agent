@@ -92,6 +92,11 @@
   "install.confirmedBadge": "Confirmed",
   "install.notConfirmed": "Confirm first",
 
+  "prereqs.title": "Prerequisites",
+  "prereqs.subtitle": "These dependencies are required by the chosen install path; the wizard checks them first and asks you to confirm before continuing.",
+  "prereqs.none": "No extra prerequisites for this install path — you can start directly.",
+  "prereqs.warn": "Some prerequisites are missing. If WSL/Node is missing, install it and restart (the wizard resumes where you left off); otherwise you may continue — installers often bundle their own dependencies.",
+
   "footer.disclaimer": "Agent Guide is an open-source wizard: it only orchestrates official installers, shows every command before running; zero telemetry; API keys are written only into local agent configs.",
 
   "dryrun.env": "Environment:",
