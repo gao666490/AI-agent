@@ -1,0 +1,87 @@
+{
+  "app.name": "Agent Guide",
+  "app.tagline": "目录驱动的跨平台 Agent 安装向导",
+
+  "lang.zh": "中文",
+  "lang.en": "English",
+
+  "step.welcome": "欢迎与环境检测",
+  "step.platform": "平台确认",
+  "step.agent": "选择 Agent",
+  "step.permission": "权限与操作说明",
+  "step.folder": "工作目录",
+  "step.prereqs": "前置环境",
+  "step.install": "安装执行",
+  "step.model": "模型系列",
+  "step.apikey": "API Key",
+  "step.config": "配置写入",
+  "step.finish": "完成",
+
+  "welcome.title": "欢迎使用 Agent Guide",
+  "welcome.subtitle": "本向导将带你在本机安装并配置主流编码 Agent。所有操作都会先展示、等你确认后才会执行。",
+  "welcome.detect.title": "环境检测",
+  "welcome.detect.running": "正在检测环境…",
+  "welcome.detect.done": "检测完成",
+  "welcome.detect.failed": "检测失败，请重试",
+
+  "detect.os": "操作系统",
+  "detect.arch": "架构",
+  "detect.osVersion": "系统版本",
+  "detect.node": "Node.js",
+  "detect.npm": "npm",
+  "detect.git": "git",
+  "detect.python": "Python",
+  "detect.wsl": "WSL",
+  "detect.value.missing": "未检测到",
+  "detect.value.wslAvailable": "可用 (WSL 2)",
+  "detect.value.wslWsl1": "可用 (WSL 1)",
+  "detect.value.wslNone": "未安装",
+
+  "common.next": "下一步",
+  "common.back": "上一步",
+  "common.continue": "继续",
+  "common.confirm": "确认",
+  "common.refresh": "重新检测",
+  "common.status": "状态",
+  "common.plan": "计划",
+
+  "platform.title": "确认你的平台",
+  "platform.subtitle": "以下是根据环境检测得到的平台信息，如有误可手动修改。",
+  "platform.windows": "Windows",
+  "platform.macos": "macOS",
+  "platform.linux": "Linux",
+
+  "agent.title": "选择要安装的 Agent",
+  "agent.subtitle": "Windows 用户请注意每个 Agent 的推荐安装路径（原生 / WSL2）。",
+  "agent.select": "选择",
+  "agent.plan": "安装计划",
+  "agent.plan.unverifiedNote": "⚠ 配方尚未经过官方端点核验（M2 待办），命令以官方最新文档为准。",
+  "agent.plan.commands": "将要执行的命令",
+  "agent.plan.workdir": "默认工作目录",
+  "agent.plan.requires": "前置依赖",
+  "agent.plan.notAvailable": "该 Agent 暂不支持此平台",
+  "agent.plan.mode.native": "原生安装",
+  "agent.plan.mode.wsl": "WSL2 安装",
+
+  "permission.title": "权限与操作说明",
+  "permission.subtitle": "以下操作将真实执行。展开每一步可以看到确切命令；确认后才会继续。",
+  "permission.agree": "我了解这些操作，同意继续",
+  "permission.readMore": "展开查看确切命令",
+
+  "folder.title": "选择工作目录",
+  "folder.subtitle": "Agent 将在这个目录下运行。WSL 场景会显示 Windows ↔ WSL 路径换算预览。",
+  "folder.workdirLabel": "工作目录",
+  "folder.wslPreview": "WSL 内对应路径",
+
+  "m2.title": "该步骤将在 M2 里程碑实现",
+  "m2.body": "安装执行引擎（分步确认执行器 + 进度日志）属于 M2 范围。当前骨架版本展示完整流程与计划预览。",
+
+  "finish.preview.title": "计划预览（M2 将在此处执行安装）",
+  "finish.preview.body": "你已经走通了向导的完整流程。M2 里程碑将把确认后的命令逐步真实执行。",
+
+  "footer.disclaimer": "Agent Guide 是开源向导工具：只编排官方安装器，命令在执行前全部展示；本工具零遥测，API Key 仅写入本机 Agent 配置。",
+
+  "dryrun.env": "环境:",
+  "dryrun.agents": "Agents (平台: {platform}):",
+  "dryrun.nothingExecuted": "未执行任何命令（dry-run）。"
+}

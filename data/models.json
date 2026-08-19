@@ -1,0 +1,46 @@
+{
+  "_meta": {
+    "description": "Model provider catalogue. Design: DESIGN.md §5.3–5.4. Endpoints & compat matrices are DESIGN-BASELINE and MUST be re-verified (endpoint verification task) before M3. Set `verified: true` only after checking the live base URL, model list, Anthropic-compat availability, and provider ToS.",
+    "updatedAt": "2026-01-01",
+    "schemaVersion": 1
+  },
+  "models": [
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "region": "cn",
+      "verified": false,
+      "api": {
+        "openaiCompatible": "https://api.deepseek.com/v1",
+        "anthropicCompatible": null,
+        "auth": "Bearer <key>"
+      },
+      "models": ["deepseek-chat", "deepseek-reasoner"],
+      "compat": {
+        "claude-code": "router",
+        "codex": "openai-compatible",
+        "hermes": "native",
+        "gemini": "unsupported",
+        "aider": "openai-compatible",
+        "opencode": "openai-compatible",
+        "goose": "openai-compatible"
+      }
+    },
+    { "id": "qwen", "name": "通义千问 Qwen (DashScope)", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "zhipu", "name": "智谱 GLM", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "moonshot", "name": "Kimi (Moonshot)", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "doubao", "name": "豆包 (火山方舟 Ark)", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "minimax", "name": "MiniMax", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "iflytek", "name": "讯飞星火", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "hunyuan", "name": "腾讯混元", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "stepfun", "name": "阶跃星辰", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "baichuan", "name": "百川", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "openai", "name": "OpenAI", "region": "global", "verified": false, "api": { "openaiCompatible": "https://api.openai.com/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "anthropic", "name": "Anthropic Claude", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": "https://api.anthropic.com", "auth": "x-api-key <key>" }, "models": [], "compat": {} },
+    { "id": "google", "name": "Google Gemini", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "grok", "name": "xAI Grok", "region": "global", "verified": false, "api": { "openaiCompatible": "https://api.x.ai/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "mistral", "name": "Mistral", "region": "global", "verified": false, "api": { "openaiCompatible": "https://api.mistral.ai/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "llama", "name": "Meta Llama (hosted)", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    { "id": "openrouter", "name": "OpenRouter", "region": "global", "verified": false, "api": { "openaiCompatible": "https://openrouter.ai/api/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "app.name": "Agent Guide",
+  "app.tagline": "Directory-driven cross-platform agent installer wizard",
+
+  "lang.zh": "中文",
+  "lang.en": "English",
+
+  "step.welcome": "Welcome & Env Check",
+  "step.platform": "Platform",
+  "step.agent": "Choose Agent",
+  "step.permission": "Permissions",
+  "step.folder": "Work Directory",
+  "step.prereqs": "Prerequisites",
+  "step.install": "Install",
+  "step.model": "Model Provider",
+  "step.apikey": "API Key",
+  "step.config": "Write Config",
+  "step.finish": "Finish",
+
+  "welcome.title": "Welcome to Agent Guide",
+  "welcome.subtitle": "This wizard installs and configures mainstream coding agents on your machine. Every operation is shown first and only runs after you confirm.",
+  "welcome.detect.title": "Environment Detection",
+  "welcome.detect.running": "Detecting environment…",
+  "welcome.detect.done": "Detection complete",
+  "welcome.detect.failed": "Detection failed, please retry",
+
+  "detect.os": "OS",
+  "detect.arch": "Architecture",
+  "detect.osVersion": "OS version",
+  "detect.node": "Node.js",
+  "detect.npm": "npm",
+  "detect.git": "git",
+  "detect.python": "Python",
+  "detect.wsl": "WSL",
+  "detect.value.missing": "Not detected",
+  "detect.value.wslAvailable": "Available (WSL 2)",
+  "detect.value.wslWsl1": "Available (WSL 1)",
+  "detect.value.wslNone": "Not installed",
+
+  "common.next": "Next",
+  "common.back": "Back",
+  "common.continue": "Continue",
+  "common.confirm": "Confirm",
+  "common.refresh": "Re-detect",
+  "common.status": "Status",
+  "common.plan": "Plan",
+
+  "platform.title": "Confirm Your Platform",
+  "platform.subtitle": "Platform info detected from your environment; correct it here if needed.",
+  "platform.windows": "Windows",
+  "platform.macos": "macOS",
+  "platform.linux": "Linux",
+
+  "agent.title": "Choose an Agent to Install",
+  "agent.subtitle": "Windows users: note each agent's recommended path (native / WSL2).",
+  "agent.select": "Select",
+  "agent.plan": "Install Plan",
+  "agent.plan.unverifiedNote": "⚠ Recipes are not yet verified against official endpoints (M2 todo); commands follow the latest official docs.",
+  "agent.plan.commands": "Commands to be executed",
+  "agent.plan.workdir": "Default work directory",
+  "agent.plan.requires": "Prerequisites",
+  "agent.plan.notAvailable": "This agent is not available on this platform yet",
+  "agent.plan.mode.native": "Native install",
+  "agent.plan.mode.wsl": "WSL2 install",
+
+  "permission.title": "Permissions & Operations",
+  "permission.subtitle": "The following operations will actually run. Expand each step to see the exact command; we only continue after your confirmation.",
+  "permission.agree": "I understand these operations and agree to continue",
+  "permission.readMore": "Expand to see exact commands",
+
+  "folder.title": "Choose a Work Directory",
+  "folder.subtitle": "The agent will run in this directory. WSL scenarios show a Windows ↔ WSL path preview.",
+  "folder.workdirLabel": "Work directory",
+  "folder.wslPreview": "Corresponding path in WSL",
+
+  "m2.title": "This step ships in milestone M2",
+  "m2.body": "The install execution engine (step-by-step confirmed executor + progress logs) is M2 scope. This skeleton shows the full flow and plan preview.",
+
+  "finish.preview.title": "Plan Preview (M2 executes the install here)",
+  "finish.preview.body": "You walked through the complete wizard flow. Milestone M2 will execute the confirmed commands step by step.",
+
+  "footer.disclaimer": "Agent Guide is an open-source wizard: it only orchestrates official installers, shows every command before running; zero telemetry; API keys are written only into local agent configs.",
+
+  "dryrun.env": "Environment:",
+  "dryrun.agents": "Agents (platform: {platform}):",
+  "dryrun.nothingExecuted": "Nothing was executed (dry-run)."
+}

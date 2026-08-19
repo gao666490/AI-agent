@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Guide</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">AG</span>
+      <div>
+        <div class="brand-name" data-i18n="app.name">Agent Guide</div>
+        <div class="brand-tagline" data-i18n="app.tagline"></div>
+      </div>
+    </div>
+    <div class="lang-toggle" id="lang-toggle">
+      <button data-lang="zh-CN" class="lang-btn" id="lang-zh-CN" type="button">中文</button>
+      <button data-lang="en" class="lang-btn" id="lang-en" type="button">English</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <ol class="steps" id="steps"></ol>
+    </aside>
+    <main class="content" id="view">
+      <div class="loading" data-i18n="welcome.detect.running">正在检测环境…</div>
+    </main>
+  </div>
+
+  <footer class="footer" data-i18n="footer.disclaimer"></footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

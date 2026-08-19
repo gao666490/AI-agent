@@ -1,0 +1,39 @@
+{
+  "name": "agent-guide",
+  "version": "0.1.0",
+  "description": "A directory-driven, cross-platform wizard that guides you through installing and configuring AI coding agents (Claude Code, Codex CLI, Hermes, Gemini CLI, Aider, OpenCode, Goose) with your model provider of choice.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "agent-guide": "bin/agent-guide.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin",
+    "src",
+    "data",
+    "i18n",
+    "web"
+  ],
+  "scripts": {
+    "start": "node bin/agent-guide.js",
+    "test": "node --test",
+    "dry-run": "node bin/agent-guide.js --dry-run"
+  },
+  "keywords": [
+    "agent",
+    "claude-code",
+    "codex",
+    "hermes",
+    "aider",
+    "opencode",
+    "goose",
+    "installer",
+    "wizard",
+    "wsl",
+    "llm"
+  ],
+  "dependencies": {}
+}

@@ -1,0 +1,342 @@
+{
+  "_meta": {
+    "description": "Agent recipes. Design: DESIGN.md §5.1–5.2. Commands & endpoints are DESIGN-BASELINE and MUST be re-verified per agent before M2 release (design §13). Flip `verified` to true only after manual E2E pass.",
+    "updatedAt": "2026-01-01",
+    "schemaVersion": 1
+  },
+  "agents": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "homepage": "https://docs.anthropic.com/en/docs/claude-code",
+      "license": "proprietary",
+      "launchCommand": "claude",
+      "verified": false,
+      "note": "Windows recommended path is WSL2 (sandbox + MCP ecosystem), per design D2.",
+      "platforms": {
+        "windows": {
+          "recommended": "wsl",
+          "choices": {
+            "wsl": {
+              "label": "WSL2 内安装（官方推荐）",
+              "command": "wsl -e bash -lc \"curl -fsSL https://claude.ai/install.sh | bash\"",
+              "requires": ["wsl", "git"],
+              "defaultWorkDir": "~/agents/claude-code"
+            },
+            "native": {
+              "label": "Windows 原生（PowerShell）",
+              "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://claude.ai/install.ps1 | iex\"",
+              "requires": ["git"],
+              "defaultWorkDir": "%USERPROFILE%\\agents\\claude-code"
+            }
+          }
+        },
+        "macos": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "原生安装",
+              "command": "curl -fsSL https://claude.ai/install.sh | bash",
+              "requires": ["git"],
+              "defaultWorkDir": "~/agents/claude-code"
+            }
+          }
+        },
+        "linux": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "原生安装",
+              "command": "curl -fsSL https://claude.ai/install.sh | bash",
+              "requires": ["git"],
+              "defaultWorkDir": "~/agents/claude-code"
+            }
+          }
+        }
+      },
+      "config": { "kind": "claude", "homeDir": "~/.claude", "providerCommand": null }
+    },
+    {
+      "id": "codex",
+      "name": "Codex CLI",
+      "homepage": "https://github.com/openai/codex",
+      "license": "Apache-2.0",
+      "launchCommand": "codex",
+      "verified": false,
+      "note": "Native on Windows; sandbox capability weaker than WSL2, noted in the recipe copy.",
+      "platforms": {
+        "windows": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "Windows 原生",
+              "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://chatgpt.com/codex/install.ps1 | iex\"",
+              "requires": ["git"],
+              "defaultWorkDir": "%USERPROFILE%\\agents\\codex"
+            },
+            "wsl": {
+              "label": "WSL2（沙箱能力更强）",
+              "command": "wsl -e bash -lc \"curl -fsSL https://chatgpt.com/codex/install.sh | sh\"",
+              "requires": ["wsl", "git"],
+              "defaultWorkDir": "~/agents/codex"
+            }
+          }
+        },
+        "macos": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "原生安装",
+              "command": "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
+              "requires": ["git"],
+              "defaultWorkDir": "~/agents/codex"
+            }
+          }
+        },
+        "linux": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "原生安装",
+              "command": "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
+              "requires": ["git"],
+              "defaultWorkDir": "~/agents/codex"
+            }
+          }
+        }
+      },
+      "config": { "kind": "codex", "homeDir": "~/.codex", "providerCommand": "codex login" }
+    },
+    {
+      "id": "hermes",
+      "name": "Hermes Agent",
+      "homepage": "https://github.com/NousResearch/hermes-agent",
+      "license": "MIT",
+      "launchCommand": "hermes",
+      "verified": false,
+      "note": "Windows native is officially supported (windows-native docs); installer bundles uv/Python/Node deps.",
+      "platforms": {
+        "windows": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "原生安装（官方推荐，无需 WSL）",
+              "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"iex (irm https://hermes-agent.nousresearch.com/install.ps1)\"",
+              "requires": ["git"],
+              "defaultWorkDir": "%USERPROFILE%\\agents\\hermes"
+            },
+            "wsl": {
+              "label": "WSL2（可选）",
+              "command": "wsl -e bash -lc \"curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash\"",
+              "requires": ["wsl", "git"],
+              "defaultWorkDir": "~/agents/hermes"
+            }
+          }
+        },
+        "macos": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "原生安装",
+              "command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash",
+              "requires": ["git"],
+              "defaultWorkDir": "~/agents/hermes"
+            }
+          }
+        },
+        "linux": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "原生安装",
+              "command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash",
+              "requires": ["git"],
+              "defaultWorkDir": "~/agents/hermes"
+            }
+          }
+        }
+      },
+      "config": { "kind": "hermes", "homeDir": "~/.hermes", "providerCommand": "hermes model" }
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini CLI",
+      "homepage": "https://github.com/google-gemini/gemini-cli",
+      "license": "Apache-2.0",
+      "launchCommand": "gemini",
+      "verified": false,
+      "note": "npm-based; Google account auth.",
+      "platforms": {
+        "windows": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "npm 全局安装",
+              "command": "npm install -g @google/gemini-cli",
+              "requires": ["node"],
+              "defaultWorkDir": "%USERPROFILE%\\agents\\gemini"
+            }
+          }
+        },
+        "macos": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "npm 全局安装",
+              "command": "npm install -g @google/gemini-cli",
+              "requires": ["node"],
+              "defaultWorkDir": "~/agents/gemini"
+            }
+          }
+        },
+        "linux": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "npm 全局安装",
+              "command": "npm install -g @google/gemini-cli",
+              "requires": ["node"],
+              "defaultWorkDir": "~/agents/gemini"
+            }
+          }
+        }
+      },
+      "config": { "kind": "gemini", "homeDir": "~/.gemini", "providerCommand": "gemini auth login" }
+    },
+    {
+      "id": "aider",
+      "name": "Aider",
+      "homepage": "https://github.com/Aider-AI/aider",
+      "license": "Apache-2.0",
+      "launchCommand": "aider",
+      "verified": false,
+      "note": "uv tool is the default because pip hits PEP 668 externally-managed-environment errors on modern distros.",
+      "platforms": {
+        "windows": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "uv tool 安装（原生）",
+              "command": "uv tool install aider-chat",
+              "requires": ["uv", "git"],
+              "defaultWorkDir": "%USERPROFILE%\\agents\\aider"
+            }
+          }
+        },
+        "macos": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "uv tool 安装",
+              "command": "uv tool install aider-chat",
+              "requires": ["uv", "git"],
+              "defaultWorkDir": "~/agents/aider"
+            }
+          }
+        },
+        "linux": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "uv tool 安装",
+              "command": "uv tool install aider-chat",
+              "requires": ["uv", "git"],
+              "defaultWorkDir": "~/agents/aider"
+            }
+          }
+        }
+      },
+      "config": { "kind": "aider", "homeDir": "~/.aider", "providerCommand": "aider --model" }
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode",
+      "homepage": "https://github.com/sst/opencode",
+      "license": "MIT",
+      "launchCommand": "opencode",
+      "verified": false,
+      "note": "",
+      "platforms": {
+        "windows": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "官方脚本（原生）",
+              "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://opencode.ai/install | iex\"",
+              "requires": [],
+              "defaultWorkDir": "%USERPROFILE%\\agents\\opencode"
+            }
+          }
+        },
+        "macos": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "官方脚本",
+              "command": "curl -fsSL https://opencode.ai/install | bash",
+              "requires": [],
+              "defaultWorkDir": "~/agents/opencode"
+            }
+          }
+        },
+        "linux": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "官方脚本",
+              "command": "curl -fsSL https://opencode.ai/install | bash",
+              "requires": [],
+              "defaultWorkDir": "~/agents/opencode"
+            }
+          }
+        }
+      },
+      "config": { "kind": "opencode", "homeDir": "~/.config/opencode", "providerCommand": "opencode auth login" }
+    },
+    {
+      "id": "goose",
+      "name": "Goose",
+      "homepage": "https://github.com/block/goose",
+      "license": "Apache-2.0",
+      "launchCommand": "goose",
+      "verified": false,
+      "note": "npm path chosen for consistency; official script / winget / brew are alternatives.",
+      "platforms": {
+        "windows": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "npm 全局安装（原生）",
+              "command": "npm install -g @block-opensource/goose",
+              "requires": ["node"],
+              "defaultWorkDir": "%USERPROFILE%\\agents\\goose"
+            }
+          }
+        },
+        "macos": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "npm 全局安装",
+              "command": "npm install -g @block-opensource/goose",
+              "requires": ["node"],
+              "defaultWorkDir": "~/agents/goose"
+            }
+          }
+        },
+        "linux": {
+          "recommended": "native",
+          "choices": {
+            "native": {
+              "label": "npm 全局安装",
+              "command": "npm install -g @block-opensource/goose",
+              "requires": ["node"],
+              "defaultWorkDir": "~/agents/goose"
+            }
+          }
+        }
+      },
+      "config": { "kind": "goose", "homeDir": "~/.config/goose", "providerCommand": "goose configure" }
+    }
+  ]
+}
