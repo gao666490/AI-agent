@@ -73,8 +73,8 @@
   "folder.workdirLabel": "Work directory",
   "folder.wslPreview": "Corresponding path in WSL",
 
-  "m2.title": "This step ships in milestone M2",
-  "m2.body": "The install execution engine (step-by-step confirmed executor + progress logs) is M2 scope. This skeleton shows the full flow and plan preview.",
+  "m2.title": "This step ships in a later milestone",
+  "m2.body": "Model selection / API key / config writing (M3) and router / WSL integration (M4) are not implemented yet. Current version covers: environment detection → agent selection → prerequisite check → step-by-step confirmed real install execution.",
 
   "finish.preview.title": "Plan Preview (M2 executes the install here)",
   "finish.preview.body": "You walked through the complete wizard flow. Milestone M2 will execute the confirmed commands step by step.",

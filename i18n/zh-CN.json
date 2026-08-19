@@ -73,8 +73,8 @@
   "folder.workdirLabel": "工作目录",
   "folder.wslPreview": "WSL 内对应路径",
 
-  "m2.title": "该步骤将在 M2 里程碑实现",
-  "m2.body": "安装执行引擎（分步确认执行器 + 进度日志）属于 M2 范围。当前骨架版本展示完整流程与计划预览。",
+  "m2.title": "该步骤将在后续里程碑实现",
+  "m2.body": "模型选择 / API Key / 配置写入（M3）与 router / WSL 集成（M4）尚未实现。当前版本可完成：环境检测 → 选 Agent → 前置依赖确认 → 逐步确认并真实执行安装。",
 
   "finish.preview.title": "计划预览（M2 将在此处执行安装）",
   "finish.preview.body": "你已经走通了向导的完整流程。M2 里程碑将把确认后的命令逐步真实执行。",
