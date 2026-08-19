@@ -51,10 +51,25 @@ test/                 node:test 单测（state / i18n / plan / schema / exec / p
 | 里程碑 | 内容 | 状态 |
 |---|---|---|
 | M1 骨架 | npm 包 + CLI + 本地服务 + 浏览器 UI + i18n + 环境检测 + state 持久化 | ✅ 完成 |
-| M2 安装引擎 | 分步确认执行器（SSE 流式日志）+ 前置环境确认 + 计划汇总页 + 7 Agent 配方核验 | 🚧 进行中 |
-| M3 模型接入 | 端点核验 + 兼容矩阵 + 配置写入器 | ⏳ |
-| M4 Router 与 WSL | claude-code-router 集成 + WSL/Ubuntu 流程 + 提权 + 重启恢复 | ⏳ |
-| M5 打磨与发布 | doctor、日志、npm 发布、README 双语、验收清单 | ⏳ |
+| M2 安装引擎 | 分步确认执行器（SSE 流式日志）+ 前置环境确认 + 计划汇总页 + 7 Agent 配方核验 | ✅ 完成 |
+| M3 模型接入 | 国内 10 家端点核验 + 兼容矩阵 + 模型/Key 页 + 配置写入器 + doctor | ✅ 完成 |
+| M4 Router 与 WSL | claude-code-router 集成 + WSL 流程深化 + 提权 + 重启恢复 | ⏳ |
+| M5 打磨与发布 | npm 发布、README 双语、验收清单 | ⏳ |
+
+## 国内模型接入现状（M3）
+
+| 提供商 | OpenAI 兼容端点 | Anthropic 兼容 | Claude Code |
+|---|---|---|---|
+| DeepSeek | api.deepseek.com | ✅ /anthropic | ✅ 直连 |
+| 通义千问 Qwen | dashscope compatible-mode/v1 | ✅ /apps/anthropic | ✅ 直连 |
+| 智谱 GLM | open.bigmodel.cn/api/paas/v4 | ✅ /api/anthropic | ✅ 直连 |
+| Kimi Moonshot | api.moonshot.cn/v1 | ✅ /anthropic | ✅ 直连 |
+| 腾讯混元 | tokenhub.tencentmaas.com/v1 | ✅ | ✅ 直连 |
+| 阶跃星辰 StepFun | api.stepfun.com/v1 | ✅ | ✅ 直连 |
+| 豆包 (火山方舟) | ark.cn-beijing.volces.com/api/v3 | — | 需 router (M4) |
+| MiniMax | api.minimax.chat/v1 | — | 需 router (M4) |
+| 讯飞星火 | spark-api-open.xf-yun.com/v1 | — | 需 router (M4) |
+| 百川 Baichuan | api.baichuan-ai.com/v1 | — | 不支持 |
 
 ## License
 

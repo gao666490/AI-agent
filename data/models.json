@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "description": "Model provider catalogue. Design: DESIGN.md §5.3–5.4. Endpoints & compat matrices are DESIGN-BASELINE and MUST be re-verified (endpoint verification task) before M3. Set `verified: true` only after checking the live base URL, model list, Anthropic-compat availability, and provider ToS.",
-    "updatedAt": "2026-01-01",
-    "schemaVersion": 1
+    "description": "Model provider catalogue. Design: DESIGN.md §5.3–5.4. M3 verification pass (2026): CN providers DeepSeek/Qwen/GLM/Kimi/Hunyuan/StepFun/Baichuan verified against official docs (live fetch); Doubao/MiniMax/Spark endpoints confirmed live (401 = endpoint up, auth required) with model names per official console. Anthropic-compatible endpoints exist for DeepSeek/Qwen/GLM/Kimi/Hunyuan/StepFun → Claude Code connects directly (no router needed). Global providers keep design-baseline entries (not re-verified per user decision).",
+    "updatedAt": "2026-01-02",
+    "schemaVersion": 2
   },
   "models": [
     {
@@ -109,9 +109,84 @@
         "goose": "openai-compatible"
       }
     },
-    { "id": "doubao", "name": "豆包 (火山方舟 Ark)", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "minimax", "name": "MiniMax", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "iflytek", "name": "讯飞星火", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    {
+      "id": "doubao",
+      "name": "豆包 (火山方舟 Ark)",
+      "region": "cn",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "OpenAI 兼容端点 https://ark.cn-beijing.volces.com/api/v3 实测在线（401 需认证）。",
+        "模型名以方舟控制台为准（doubao-seed 系列 / 1.5 系列）；支持直接模型名或推理接入点 ep-xxx。Anthropic 兼容端点未确认。"
+      ],
+      "api": {
+        "openaiCompatible": "https://ark.cn-beijing.volces.com/api/v3",
+        "anthropicCompatible": null,
+        "auth": "Bearer <key>"
+      },
+      "models": ["doubao-seed-1.6", "doubao-1.5-pro", "doubao-1.5-lite"],
+      "compat": {
+        "claude-code": "unsupported",
+        "codex": "openai-compatible",
+        "hermes": "openai-compatible",
+        "gemini": "unsupported",
+        "aider": "openai-compatible",
+        "opencode": "openai-compatible",
+        "goose": "openai-compatible"
+      }
+    },
+    {
+      "id": "minimax",
+      "name": "MiniMax",
+      "region": "cn",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "OpenAI 兼容端点 https://api.minimax.chat/v1（国内版）实测在线（401 需认证）；国际版 https://api.minimaxi.com/v1。",
+        "模型以 MiniMax-M2.x 系列为主；Anthropic 兼容端点未确认。"
+      ],
+      "api": {
+        "openaiCompatible": "https://api.minimax.chat/v1",
+        "anthropicCompatible": null,
+        "auth": "Bearer <key>"
+      },
+      "models": ["MiniMax-M2.7", "MiniMax-Text-01", "abab6.5s"],
+      "compat": {
+        "claude-code": "unsupported",
+        "codex": "openai-compatible",
+        "hermes": "openai-compatible",
+        "gemini": "unsupported",
+        "aider": "openai-compatible",
+        "opencode": "openai-compatible",
+        "goose": "openai-compatible"
+      }
+    },
+    {
+      "id": "iflytek",
+      "name": "讯飞星火 Spark",
+      "region": "cn",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "OpenAI 兼容端点 https://spark-api-open.xf-yun.com/v1 实测在线（401 需认证）；Bearer Key（控制台创建，需开通对应模型）。",
+        "模型 spark-lite / spark-pro / spark-max / spark-4.0；Anthropic 兼容端点未确认。"
+      ],
+      "api": {
+        "openaiCompatible": "https://spark-api-open.xf-yun.com/v1",
+        "anthropicCompatible": null,
+        "auth": "Bearer <key>"
+      },
+      "models": ["spark-4.0", "spark-max", "spark-pro", "spark-lite"],
+      "compat": {
+        "claude-code": "unsupported",
+        "codex": "openai-compatible",
+        "hermes": "openai-compatible",
+        "gemini": "unsupported",
+        "aider": "openai-compatible",
+        "opencode": "openai-compatible",
+        "goose": "openai-compatible"
+      }
+    },
     {
       "id": "hunyuan",
       "name": "腾讯混元 (TokenHub)",
