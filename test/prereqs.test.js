@@ -32,3 +32,21 @@ test('wsl requirement reads from the env snapshot without spawning', async () =>
   assert.equal(r2.items[0].present, true);
   assert.equal(r2.items[0].version, 'WSL 2');
 });
+
+test('installable tiers: uv=user(auto), git=admin, node=manual', async () => {
+  const [uv, git, node] = (await checkPrereqs(['uv', 'git', 'node'], {})).items;
+  assert.equal(uv.installable, 'user');
+  assert.ok(uv.installCommand, 'uv has an install command');
+  assert.ok(Array.isArray(uv.installSteps) && uv.installSteps.length > 0, 'uv has executable install steps');
+  assert.equal(git.installable, 'admin');
+  assert.ok(git.installCommand, 'git shows the admin command');
+  assert.equal(node.installable, 'manual');
+  assert.equal(node.installCommand, null);
+});
+
+test('present requirements carry no install steps', async () => {
+  const items = (await checkPrereqs(['uv', 'node'], {})).items;
+  for (const it of items) {
+    if (it.present) assert.equal(it.installSteps, undefined, `${it.name} present -> no install steps`);
+  }
+});

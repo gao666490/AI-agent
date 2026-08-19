@@ -117,6 +117,32 @@ test('/api/config rejects incompatible combos before writing', async () => {
   assert.equal(body.error, 'incompatible', 'gemini × deepseek must be rejected by the compat matrix');
 });
 
+test('prereq install: admin-tier requirement is refused with the command', async () => {
+  // aider requires git (admin tier on all platforms); force bypasses the
+  // already-present short-circuit so the test is machine-independent.
+  await post('/api/state', JSON.stringify({ agentId: 'aider', platform: 'windows', mode: 'native' }));
+  const res = await post('/api/prereqs/git/install', JSON.stringify({ force: true }));
+  assert.equal(res.status, 400);
+  const body = await res.json();
+  assert.equal(body.error, 'requires-manual-install');
+  assert.equal(body.installable, 'admin');
+  assert.ok(body.command, 'admin command is surfaced');
+});
+
+test('prereq install: user-tier runs over SSE (dry-run, force)', async () => {
+  // aider requires uv (user tier) — dry-run + force so nothing is installed
+  // and the test works whether or not uv is already present.
+  await post('/api/state', JSON.stringify({ agentId: 'aider', platform: 'windows', mode: 'native' }));
+  const res = await post('/api/prereqs/uv/install', JSON.stringify({ dryRun: true, force: true }));
+  assert.equal(res.status, 200);
+  const text = await res.text();
+  assert.ok(text.includes('event: log'));
+  assert.ok(text.includes('event: done'));
+  assert.ok(text.includes('"code":0'));
+  assert.ok(text.includes('"dryRun":true'));
+  assert.ok(text.includes('astral.sh'), 'dry-run echoes the official installer command');
+});
+
 test('execute requires the step to be confirmed first (409)', async () => {
   const res = await post('/api/steps/install/execute');
   assert.equal(res.status, 409);

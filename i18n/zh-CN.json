@@ -96,6 +96,13 @@
   "prereqs.subtitle": "以下依赖是当前安装方式需要的，向导会先检测再让你确认是否继续。",
   "prereqs.none": "当前安装方式没有额外前置依赖，可以直接开始。",
   "prereqs.warn": "存在缺失的前置依赖。缺失 WSL/Node 时建议先安装并重启，向导支持断点恢复；其余缺失也可直接继续（安装脚本可能自带依赖）。",
+  "prereqs.install": "自动安装",
+  "prereqs.copy": "复制命令",
+  "prereqs.copied": "已复制到剪贴板",
+  "prereqs.manual": "需手动安装",
+  "prereqs.running": "安装中…",
+  "prereqs.installed": "安装完成，正在重新检测…",
+  "prereqs.redetect": "重新检测",
 
   "model.title": "选择模型系列",
   "model.subtitle": "优先接入国内模型；每个模型标注了与当前 Agent 的兼容方式（原生 / 厂商兼容 / 需 router / 不支持）。",

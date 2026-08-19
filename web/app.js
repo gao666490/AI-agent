@@ -271,23 +271,35 @@ viewRenderers.prereqs = async () => {
     </div>`;
   }
   const data = await api(`/api/prereqs`);
-  const rows = data.items.map((r) => `
+  const rows = data.items.map((r) => {
+    let action = '';
+    if (!r.present) {
+      if (r.installable === 'user') action = `<button class="btn" data-install="${esc(r.name)}">${t('prereqs.install')}</button>`;
+      else if (r.installable === 'admin') action = `<button class="btn" data-copy="${esc(r.installCommand || '')}">${t('prereqs.copy')}</button>`;
+      else action = `<span class="badge warn" data-i18n="prereqs.manual">${t('prereqs.manual')}</span>`;
+    }
+    return `
     <tr>
       <td>${esc(r.name)}</td>
       <td><span class="badge ${r.present ? 'ok' : 'err'}">${r.present ? '✓' : '✗'}</span> ${esc(r.version || '—')}</td>
       <td>${r.present ? '' : `<span class="badge warn">${esc(r.hint)}</span>`}</td>
-    </tr>`).join('');
+      <td style="white-space:nowrap">${action}</td>
+    </tr>`;
+  }).join('');
   return `
   <div class="card">
     <h2 data-i18n="prereqs.title">${t('prereqs.title')}</h2>
     <p class="subtitle" data-i18n="prereqs.subtitle">${t('prereqs.subtitle')}</p>
     <table class="detect-table">
-      <tr><td>${t('common.status')}</td><td>${t('detect.os')}</td><td></td></tr>
+      <tr><td>${t('common.status')}</td><td>${t('detect.os')}</td><td></td><td></td></tr>
       ${rows}
     </table>
     ${data.ok ? '' : `<div class="notice">${t('prereqs.warn')}</div>`}
+    <h3>${t('install.log')}</h3>
+    <pre class="exec-log" id="prereq-log"></pre>
     <div class="actions">
       <button class="btn" data-goto="folder" data-i18n="common.back">${t('common.back')}</button>
+      <button class="btn" id="btn-redetect-prereq" data-i18n="prereqs.redetect">${t('prereqs.redetect')}</button>
       <button class="btn primary" data-goto="install" data-i18n="common.continue">${t('common.continue')}</button>
     </div>
   </div>`;
@@ -554,6 +566,75 @@ function bindActions() {
 
   const skipBtn = document.getElementById('btn-skip');
   if (skipBtn) skipBtn.addEventListener('click', () => goto('finish'));
+
+  const prereqLog = () => document.getElementById('prereq-log');
+  document.querySelectorAll('[data-install]').forEach((el) => {
+    el.addEventListener('click', async () => {
+      const name = el.dataset.install;
+      el.disabled = true;
+      el.textContent = t('prereqs.running');
+      const logEl = prereqLog();
+      if (logEl) logEl.textContent = '';
+      const append = (line) => { if (logEl) { logEl.textContent += line + '\n'; logEl.scrollTop = logEl.scrollHeight; } };
+      try {
+        const res = await fetch(`/api/prereqs/${encodeURIComponent(name)}/install`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Agent-Guide-Token': state.token },
+          body: '{}',
+        });
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          if (e.error === 'requires-manual-install') {
+            append(`[${name}] ${t('prereqs.manual')}: ${e.hint || ''}`);
+            if (e.command) { try { await navigator.clipboard.writeText(e.command); append(`[${name}] ${t('prereqs.copied')}: ${e.command}`); } catch { /* clipboard blocked */ } }
+          } else {
+            append(`[error] ${e.error || res.status}`);
+          }
+          el.disabled = false;
+          el.textContent = t('prereqs.install');
+          return;
+        }
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          let idx;
+          while ((idx = buf.indexOf('\n\n')) >= 0) {
+            const frame = buf.slice(0, idx);
+            buf = buf.slice(idx + 2);
+            for (const line of frame.split('\n')) {
+              if (line.startsWith('data:')) {
+                const obj = JSON.parse(line.slice(5).trim());
+                if (obj.line) append(obj.line);
+                if (obj.error) append(`[error] ${obj.error}`);
+              }
+            }
+          }
+        }
+        append(`[${name}] ${t('prereqs.installed')}`);
+      } catch (err) {
+        append(`[error] ${err.message}`);
+      }
+      await render(); // re-detect & re-render the prerequisite table
+    });
+  });
+
+  document.querySelectorAll('[data-copy]').forEach((el) => {
+    el.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(el.dataset.copy);
+        const old = el.textContent;
+        el.textContent = t('prereqs.copied');
+        setTimeout(() => { el.textContent = old; }, 1500);
+      } catch { /* clipboard blocked */ }
+    });
+  });
+
+  const redetectBtn = document.getElementById('btn-redetect-prereq');
+  if (redetectBtn) redetectBtn.addEventListener('click', () => render());
 
   const agree = document.getElementById('btn-agree');
   if (agree) agree.addEventListener('click', async () => {

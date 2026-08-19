@@ -13,7 +13,6 @@ import { runCommand } from './exec.js';
 import { checkPrereqs } from './prereqs.js';
 import { writeProviderConfig } from './config-writer.js';
 import { verifyKey } from './verify.js';
-
 const here = path.dirname(fileURLToPath(import.meta.url));
 const webDir = path.join(here, '..', 'web');
 const i18nDir = path.join(here, '..', 'i18n');
@@ -184,6 +183,10 @@ async function routeApi(req, res, pathname, url, ctx) {
     const check = await checkPrereqs(requires, ctx.env);
     return send(res, 200, { requires, ...check });
   }
+  const prereqInstall = pathname.match(/^\/api\/prereqs\/([^/]+)\/install$/);
+  if (prereqInstall && method === 'POST') {
+    return installPrereq(req, res, prereqInstall[1], ctx);
+  }
 
   // --- M2: step execution (SSE stream) ----------------------------------
   // Design §8: execution requires the step to be confirmed first
@@ -213,6 +216,67 @@ async function routeApi(req, res, pathname, url, ctx) {
   }
 
   return send(res, 404, { error: 'not found' });
+}
+
+/**
+ * POST /api/prereqs/:name/install — install a missing prerequisite.
+ * Tier 'user' (e.g. uv): the wizard runs the official installer over SSE.
+ * Tiers 'admin'/'manual': rejected with the command/guidance for the user
+ * to run themselves (design D8: minimal privilege, no silent elevation).
+ */
+async function installPrereq(req, res, name, ctx) {
+  const body = await readBody(req).catch(() => ({}));
+  const agents = Array.isArray(ctx.agents) ? ctx.agents : await loadAgents();
+  const agent = agents.find((a) => a.id === ctx.state.agentId);
+  const platformKey = ctx.state.platform || recipePlatform(ctx.env?.platform);
+  const plan = agent ? planForAgent(agent, platformKey, ctx.state.mode) : null;
+  const requires = plan?.requires || [];
+  if (!requires.includes(name)) return send(res, 404, { error: 'not-required' });
+
+  const check = await checkPrereqs(requires, ctx.env);
+  const item = check.items.find((i) => i.name === name);
+  if (!item) return send(res, 404, { error: 'not-required' });
+  if (item.present && !body.force) return send(res, 200, { ok: true, alreadyPresent: true });
+
+  if (item.installable !== 'user' || !item.installSteps?.length) {
+    return send(res, 400, {
+      error: 'requires-manual-install',
+      installable: item.installable,
+      command: item.installCommand,
+      hint: item.hint,
+    });
+  }
+  if (ctx.executing) return send(res, 409, { error: 'already-executing' });
+
+  ctx.executing = true;
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  const sendEvent = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  try {
+    sendEvent('status', { state: 'running', step: name });
+    for (const step of item.installSteps) {
+      const result = await runCommand({
+        command: step.command,
+        shell: step.shell ?? null,
+        timeoutMs: step.timeoutMs ?? 600000,
+        secrets: ctx.secrets || [],
+        dryRun: body.dryRun === true,
+        onLog: (line) => sendEvent('log', { line }),
+      });
+      ctx.log?.(`prereq install ${name} -> exit ${result.code} ${result.durationMs}ms`);
+      if (result.code !== 0) {
+        sendEvent('done', { step: name, code: result.code, error: 'install-failed' });
+        return;
+      }
+    }
+    sendEvent('done', { step: name, code: 0, dryRun: body.dryRun === true });
+  } finally {
+    ctx.executing = false;
+    res.end();
+  }
 }
 
 /**

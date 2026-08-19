@@ -96,6 +96,13 @@
   "prereqs.subtitle": "These dependencies are required by the chosen install path; the wizard checks them first and asks you to confirm before continuing.",
   "prereqs.none": "No extra prerequisites for this install path — you can start directly.",
   "prereqs.warn": "Some prerequisites are missing. If WSL/Node is missing, install it and restart (the wizard resumes where you left off); otherwise you may continue — installers often bundle their own dependencies.",
+  "prereqs.install": "Install",
+  "prereqs.copy": "Copy command",
+  "prereqs.copied": "Copied to clipboard",
+  "prereqs.manual": "Manual install",
+  "prereqs.running": "Installing…",
+  "prereqs.installed": "Install finished, re-checking…",
+  "prereqs.redetect": "Re-detect",
 
   "model.title": "Choose a Model Provider",
   "model.subtitle": "CN providers get priority; each model shows its compatibility with the current agent (native / vendor-compatible / needs router / unsupported).",
