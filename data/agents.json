@@ -1,31 +1,50 @@
 {
   "_meta": {
-    "description": "Agent recipes. Design: DESIGN.md §5.1–5.2. Commands & endpoints are DESIGN-BASELINE and MUST be re-verified per agent before M2 release (design §13). Flip `verified` to true only after manual E2E pass.",
-    "updatedAt": "2026-01-01",
-    "schemaVersion": 1
+    "description": "Agent recipes. Design: DESIGN.md §5.1–5.2. M2 verification pass: package/endpoint checks run 2026 on npm registry, PyPI, official domains (hermes-agent.nousresearch.com, astral.sh reachable; claude.ai/chatgpt.com/opencode.ai/github.com not reachable from the sandbox — those endpoints rest on official docs). Manual E2E per platform remains the M2 release gate (design §12).",
+    "updatedAt": "2026-01-02",
+    "schemaVersion": 2,
+    "verificationSources": {
+      "claude-code": ["https://code.claude.com/docs/en/overview", "https://www.npmjs.com/package/@anthropic-ai/claude-code"],
+      "codex": ["https://github.com/openai/codex", "https://www.npmjs.com/package/@openai/codex"],
+      "hermes": ["https://hermes-agent.nousresearch.com/docs/getting-started/installation", "https://github.com/NousResearch/hermes-agent"],
+      "gemini": ["https://www.npmjs.com/package/@google/gemini-cli"],
+      "aider": ["https://aider.chat/docs/install.html", "https://pypi.org/project/aider-chat/", "https://aider.chat/2025/01/15/uv.html"],
+      "opencode": ["https://www.npmjs.com/package/opencode-ai", "https://opencode.ai/docs", "https://github.com/sst/opencode"],
+      "goose": ["https://github.com/block/goose"]
+    }
   },
   "agents": [
     {
       "id": "claude-code",
       "name": "Claude Code",
-      "homepage": "https://docs.anthropic.com/en/docs/claude-code",
+      "homepage": "https://code.claude.com/docs/en/overview",
       "license": "proprietary",
       "launchCommand": "claude",
-      "verified": false,
-      "note": "Windows recommended path is WSL2 (sandbox + MCP ecosystem), per design D2.",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "原生安装器（claude.ai/install.sh / install.ps1）为官方现行推荐（自动更新）；npm @anthropic-ai/claude-code 2.1.235 已核验存在。",
+        "Windows 官方推荐 WSL2（沙箱 + MCP 生态），设计 D2。claude.ai 端点本环境不可直连，以上游官方文档为准。"
+      ],
       "platforms": {
         "windows": {
           "recommended": "wsl",
           "choices": {
             "wsl": {
               "label": "WSL2 内安装（官方推荐）",
-              "command": "wsl -e bash -lc \"curl -fsSL https://claude.ai/install.sh | bash\"",
+              "steps": [
+                { "id": "install", "title": "安装 Claude Code", "command": "curl -fsSL https://claude.ai/install.sh | bash", "shell": "wsl-bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "claude --version", "shell": "wsl-bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["wsl", "git"],
               "defaultWorkDir": "~/agents/claude-code"
             },
             "native": {
               "label": "Windows 原生（PowerShell）",
-              "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://claude.ai/install.ps1 | iex\"",
+              "steps": [
+                { "id": "install", "title": "安装 Claude Code", "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://claude.ai/install.ps1 | iex\"", "shell": "powershell", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "claude --version", "shell": "powershell", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["git"],
               "defaultWorkDir": "%USERPROFILE%\\agents\\claude-code"
             }
@@ -36,7 +55,10 @@
           "choices": {
             "native": {
               "label": "原生安装",
-              "command": "curl -fsSL https://claude.ai/install.sh | bash",
+              "steps": [
+                { "id": "install", "title": "安装 Claude Code", "command": "curl -fsSL https://claude.ai/install.sh | bash", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "claude --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["git"],
               "defaultWorkDir": "~/agents/claude-code"
             }
@@ -47,7 +69,10 @@
           "choices": {
             "native": {
               "label": "原生安装",
-              "command": "curl -fsSL https://claude.ai/install.sh | bash",
+              "steps": [
+                { "id": "install", "title": "安装 Claude Code", "command": "curl -fsSL https://claude.ai/install.sh | bash", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "claude --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["git"],
               "defaultWorkDir": "~/agents/claude-code"
             }
@@ -62,21 +87,31 @@
       "homepage": "https://github.com/openai/codex",
       "license": "Apache-2.0",
       "launchCommand": "codex",
-      "verified": false,
-      "note": "Native on Windows; sandbox capability weaker than WSL2, noted in the recipe copy.",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "npm @openai/codex 0.148.0 已核验存在；官方安装脚本见 openai/codex README（chatgpt.com/codex/install.sh / install.ps1，本环境不可直连复核，以官方 README 为准）。",
+        "Windows 原生支持；沙箱能力弱于 WSL2，已在配方文案说明。"
+      ],
       "platforms": {
         "windows": {
           "recommended": "native",
           "choices": {
             "native": {
-              "label": "Windows 原生",
-              "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://chatgpt.com/codex/install.ps1 | iex\"",
+              "label": "Windows 原生（PowerShell）",
+              "steps": [
+                { "id": "install", "title": "安装 Codex CLI", "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://chatgpt.com/codex/install.ps1 | iex\"", "shell": "powershell", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "codex --version", "shell": "powershell", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["git"],
               "defaultWorkDir": "%USERPROFILE%\\agents\\codex"
             },
             "wsl": {
               "label": "WSL2（沙箱能力更强）",
-              "command": "wsl -e bash -lc \"curl -fsSL https://chatgpt.com/codex/install.sh | sh\"",
+              "steps": [
+                { "id": "install", "title": "安装 Codex CLI", "command": "curl -fsSL https://chatgpt.com/codex/install.sh | sh", "shell": "wsl-bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "codex --version", "shell": "wsl-bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["wsl", "git"],
               "defaultWorkDir": "~/agents/codex"
             }
@@ -87,7 +122,10 @@
           "choices": {
             "native": {
               "label": "原生安装",
-              "command": "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
+              "steps": [
+                { "id": "install", "title": "安装 Codex CLI", "command": "curl -fsSL https://chatgpt.com/codex/install.sh | sh", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "codex --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["git"],
               "defaultWorkDir": "~/agents/codex"
             }
@@ -98,7 +136,10 @@
           "choices": {
             "native": {
               "label": "原生安装",
-              "command": "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
+              "steps": [
+                { "id": "install", "title": "安装 Codex CLI", "command": "curl -fsSL https://chatgpt.com/codex/install.sh | sh", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "codex --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["git"],
               "defaultWorkDir": "~/agents/codex"
             }
@@ -113,21 +154,31 @@
       "homepage": "https://github.com/NousResearch/hermes-agent",
       "license": "MIT",
       "launchCommand": "hermes",
-      "verified": false,
-      "note": "Windows native is officially supported (windows-native docs); installer bundles uv/Python/Node deps.",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "端点实测：install.sh / install.ps1 均 200（hermes-agent.nousresearch.com）。官方安装文档确认 Windows 原生支持（windows-native 文档存在）。",
+        "安装器自带 uv/Python/Node 等依赖（官方文档）；许可证 MIT。"
+      ],
       "platforms": {
         "windows": {
           "recommended": "native",
           "choices": {
             "native": {
               "label": "原生安装（官方推荐，无需 WSL）",
-              "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"iex (irm https://hermes-agent.nousresearch.com/install.ps1)\"",
+              "steps": [
+                { "id": "install", "title": "安装 Hermes Agent", "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"iex (irm https://hermes-agent.nousresearch.com/install.ps1)\"", "shell": "powershell", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "hermes --version", "shell": "powershell", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["git"],
               "defaultWorkDir": "%USERPROFILE%\\agents\\hermes"
             },
             "wsl": {
               "label": "WSL2（可选）",
-              "command": "wsl -e bash -lc \"curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash\"",
+              "steps": [
+                { "id": "install", "title": "安装 Hermes Agent", "command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash", "shell": "wsl-bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "hermes --version", "shell": "wsl-bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["wsl", "git"],
               "defaultWorkDir": "~/agents/hermes"
             }
@@ -138,7 +189,10 @@
           "choices": {
             "native": {
               "label": "原生安装",
-              "command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash",
+              "steps": [
+                { "id": "install", "title": "安装 Hermes Agent", "command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "hermes --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["git"],
               "defaultWorkDir": "~/agents/hermes"
             }
@@ -149,7 +203,10 @@
           "choices": {
             "native": {
               "label": "原生安装",
-              "command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash",
+              "steps": [
+                { "id": "install", "title": "安装 Hermes Agent", "command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "hermes --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["git"],
               "defaultWorkDir": "~/agents/hermes"
             }
@@ -164,15 +221,22 @@
       "homepage": "https://github.com/google-gemini/gemini-cli",
       "license": "Apache-2.0",
       "launchCommand": "gemini",
-      "verified": false,
-      "note": "npm-based; Google account auth.",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "npm @google/gemini-cli 0.55.1 已核验存在；npm 全局安装。",
+        "鉴权：gemini auth login（Google 账号）。"
+      ],
       "platforms": {
         "windows": {
           "recommended": "native",
           "choices": {
             "native": {
-              "label": "npm 全局安装",
-              "command": "npm install -g @google/gemini-cli",
+              "label": "npm 全局安装（原生）",
+              "steps": [
+                { "id": "install", "title": "安装 Gemini CLI", "command": "npm install -g @google/gemini-cli", "shell": "powershell", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "gemini --version", "shell": "powershell", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["node"],
               "defaultWorkDir": "%USERPROFILE%\\agents\\gemini"
             }
@@ -183,7 +247,10 @@
           "choices": {
             "native": {
               "label": "npm 全局安装",
-              "command": "npm install -g @google/gemini-cli",
+              "steps": [
+                { "id": "install", "title": "安装 Gemini CLI", "command": "npm install -g @google/gemini-cli", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "gemini --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["node"],
               "defaultWorkDir": "~/agents/gemini"
             }
@@ -194,7 +261,10 @@
           "choices": {
             "native": {
               "label": "npm 全局安装",
-              "command": "npm install -g @google/gemini-cli",
+              "steps": [
+                { "id": "install", "title": "安装 Gemini CLI", "command": "npm install -g @google/gemini-cli", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "gemini --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["node"],
               "defaultWorkDir": "~/agents/gemini"
             }
@@ -209,15 +279,22 @@
       "homepage": "https://github.com/Aider-AI/aider",
       "license": "Apache-2.0",
       "launchCommand": "aider",
-      "verified": false,
-      "note": "uv tool is the default because pip hits PEP 668 externally-managed-environment errors on modern distros.",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "PyPI aider-chat 0.86.2 已核验存在；uv tool 为官方推荐安装器（PEP 668 下首选，官方博客与 issue 佐证），pip 为备选。",
+        "Aider 强依赖 git（官方文档列为安装前提）。"
+      ],
       "platforms": {
         "windows": {
           "recommended": "native",
           "choices": {
             "native": {
-              "label": "uv tool 安装（原生）",
-              "command": "uv tool install aider-chat",
+              "label": "uv tool 安装（原生，官方推荐）",
+              "steps": [
+                { "id": "install", "title": "安装 Aider", "command": "uv tool install aider-chat", "shell": "powershell", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "aider --version", "shell": "powershell", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["uv", "git"],
               "defaultWorkDir": "%USERPROFILE%\\agents\\aider"
             }
@@ -228,7 +305,10 @@
           "choices": {
             "native": {
               "label": "uv tool 安装",
-              "command": "uv tool install aider-chat",
+              "steps": [
+                { "id": "install", "title": "安装 Aider", "command": "uv tool install aider-chat", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "aider --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["uv", "git"],
               "defaultWorkDir": "~/agents/aider"
             }
@@ -239,7 +319,10 @@
           "choices": {
             "native": {
               "label": "uv tool 安装",
-              "command": "uv tool install aider-chat",
+              "steps": [
+                { "id": "install", "title": "安装 Aider", "command": "uv tool install aider-chat", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "aider --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
               "requires": ["uv", "git"],
               "defaultWorkDir": "~/agents/aider"
             }
@@ -254,16 +337,32 @@
       "homepage": "https://github.com/sst/opencode",
       "license": "MIT",
       "launchCommand": "opencode",
-      "verified": false,
-      "note": "",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "npm opencode-ai 1.18.18 已核验存在。官方文档将 Windows 原生标记为实验性、首选 WSL，故 Windows 推荐 wsl。",
+        "opencode.ai/install 脚本端点本环境不可直连复核，macOS/Linux 以 npm 为主、脚本为备选。"
+      ],
       "platforms": {
         "windows": {
-          "recommended": "native",
+          "recommended": "wsl",
           "choices": {
+            "wsl": {
+              "label": "WSL2 内安装（官方首选，原生为实验性）",
+              "steps": [
+                { "id": "install", "title": "安装 OpenCode", "command": "curl -fsSL https://opencode.ai/install | bash", "shell": "wsl-bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "opencode --version", "shell": "wsl-bash", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": ["wsl"],
+              "defaultWorkDir": "~/agents/opencode"
+            },
             "native": {
-              "label": "官方脚本（原生）",
-              "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://opencode.ai/install | iex\"",
-              "requires": [],
+              "label": "Windows 原生（实验性，npm 安装）",
+              "steps": [
+                { "id": "install", "title": "安装 OpenCode", "command": "npm install -g opencode-ai", "shell": "powershell", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "opencode --version", "shell": "powershell", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": ["node"],
               "defaultWorkDir": "%USERPROFILE%\\agents\\opencode"
             }
           }
@@ -272,9 +371,12 @@
           "recommended": "native",
           "choices": {
             "native": {
-              "label": "官方脚本",
-              "command": "curl -fsSL https://opencode.ai/install | bash",
-              "requires": [],
+              "label": "npm 安装",
+              "steps": [
+                { "id": "install", "title": "安装 OpenCode", "command": "npm install -g opencode-ai", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "opencode --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": ["node"],
               "defaultWorkDir": "~/agents/opencode"
             }
           }
@@ -283,9 +385,12 @@
           "recommended": "native",
           "choices": {
             "native": {
-              "label": "官方脚本",
-              "command": "curl -fsSL https://opencode.ai/install | bash",
-              "requires": [],
+              "label": "npm 安装",
+              "steps": [
+                { "id": "install", "title": "安装 OpenCode", "command": "npm install -g opencode-ai", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "opencode --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": ["node"],
               "defaultWorkDir": "~/agents/opencode"
             }
           }
@@ -300,15 +405,22 @@
       "license": "Apache-2.0",
       "launchCommand": "goose",
       "verified": false,
-      "note": "npm path chosen for consistency; official script / winget / brew are alternatives.",
+      "verifiedAt": null,
+      "notes": [
+        "官方渠道：winget（Windows）/ brew（macOS）/ 官方脚本（mac/linux）。npm 包 @block-opensource/goose 在 2026-01 核验时不存在，已从配方移除。",
+        "本环境无法直连 github.com 复核下载 URL，以下命令为官方文档基准，需人工 E2E 核验后翻转 verified（M2 收尾项）。"
+      ],
       "platforms": {
         "windows": {
           "recommended": "native",
           "choices": {
             "native": {
-              "label": "npm 全局安装（原生）",
-              "command": "npm install -g @block-opensource/goose",
-              "requires": ["node"],
+              "label": "winget 安装（原生）",
+              "steps": [
+                { "id": "install", "title": "安装 Goose", "command": "winget install --id Block.Goose", "shell": "powershell", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "powershell", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": [],
               "defaultWorkDir": "%USERPROFILE%\\agents\\goose"
             }
           }
@@ -317,9 +429,12 @@
           "recommended": "native",
           "choices": {
             "native": {
-              "label": "npm 全局安装",
-              "command": "npm install -g @block-opensource/goose",
-              "requires": ["node"],
+              "label": "brew 安装",
+              "steps": [
+                { "id": "install", "title": "安装 Goose", "command": "brew install goose", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": [],
               "defaultWorkDir": "~/agents/goose"
             }
           }
@@ -328,9 +443,12 @@
           "recommended": "native",
           "choices": {
             "native": {
-              "label": "npm 全局安装",
-              "command": "npm install -g @block-opensource/goose",
-              "requires": ["node"],
+              "label": "官方脚本",
+              "steps": [
+                { "id": "install", "title": "安装 Goose", "command": "curl -fsSL https://github.com/block/goose/releases/download/stable/download_cli.sh | bash", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": [],
               "defaultWorkDir": "~/agents/goose"
             }
           }

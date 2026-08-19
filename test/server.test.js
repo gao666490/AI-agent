@@ -79,7 +79,8 @@ test('/api/agents/:id/plan returns hermes windows plan', async () => {
   const res = await get('/api/agents/hermes/plan?platform=windows', { 'X-Agent-Guide-Token': token });
   const body = await res.json();
   assert.equal(body.plan.mode, 'native');
-  assert.equal(body.plan.commands.length, 1);
+  assert.equal(body.plan.commands.length, 2);
+  assert.equal(body.plan.steps.length, 2);
 });
 
 test('/api/agents/:id/plan 404s for unknown agent', async () => {
