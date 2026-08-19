@@ -98,7 +98,7 @@
         "anthropicCompatible": "https://api.moonshot.cn/anthropic",
         "auth": "Bearer <key>"
       },
-      "models": ["kimi-k3", "kimi-k2.7-code", "kimi-k2.6"],
+      "models": ["kimi-k3", "kimi-k2.7-code", "kimi-k2.7-code-highspeed", "kimi-k2.6"],
       "compat": {
         "claude-code": "anthropic-compatible",
         "codex": "openai-compatible",
