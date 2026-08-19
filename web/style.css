@@ -112,6 +112,9 @@ html, body {
 .badge.err { color: var(--err); border-color: var(--err); }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.group-title { margin: 18px 0 10px; font-size: 15px; color: var(--text-dim); }
+.agent-card.disabled-card { opacity: 0.5; cursor: not-allowed; }
+.agent-card.disabled-card:hover { border-color: var(--border); transform: none; }
 .agent-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 16px; cursor: pointer;

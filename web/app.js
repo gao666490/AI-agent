@@ -169,6 +169,72 @@ viewRenderers.folder = () => `
     </div>
   </div>`;
 
+viewRenderers.model = async () => {
+  const data = await api(`/api/models?agentId=${encodeURIComponent(state.agentId || '')}`);
+  const cn = data.models.filter((m) => m.region === 'cn');
+  const global = data.models.filter((m) => m.region === 'global');
+  const badgeCls = { native: 'ok', 'anthropic-compatible': 'ok', 'openai-compatible': 'ok', router: 'warn', unsupported: 'err' };
+  const card = (m) => {
+    const disabled = m.compat === 'unsupported';
+    return `
+    <div class="agent-card model-card ${state.modelId === m.id ? 'selected' : ''} ${disabled ? 'disabled-card' : ''}" data-model="${esc(m.id)}" ${disabled ? 'data-disabled="1"' : ''}>
+      <h3>${esc(m.name)}</h3>
+      <div class="meta">
+        <span class="badge ${badgeCls[m.compat] || ''}">${t(`model.compat.${m.compat}`)}</span>
+        ${m.verified ? '' : ' <span class="badge warn">unverified</span>'}
+      </div>
+      <div class="launch">${esc((m.models || []).join(' · ') || '—')}</div>
+    </div>`;
+  };
+  return `
+  <div class="card">
+    <h2 data-i18n="model.title">${t('model.title')}</h2>
+    <p class="subtitle" data-i18n="model.subtitle">${t('model.subtitle')}</p>
+  </div>
+  <h3 class="group-title" data-i18n="model.group.cn">${t('model.group.cn')}</h3>
+  <div class="grid">${cn.map(card).join('')}</div>
+  <h3 class="group-title" data-i18n="model.group.global">${t('model.group.global')}</h3>
+  <div class="grid">${global.map(card).join('')}</div>
+  <div class="actions">
+    <button class="btn" data-goto="install" data-i18n="common.back">${t('common.back')}</button>
+    <button class="btn primary" id="btn-next" data-i18n="common.next">${t('common.next')}</button>
+  </div>`;
+};
+
+viewRenderers.apikey = async () => {
+  const data = await api(`/api/models?agentId=${encodeURIComponent(state.agentId || '')}`);
+  const model = data.models.find((m) => m.id === state.modelId);
+  if (!model) {
+    return `
+    <div class="card">
+      <h2 data-i18n="apikey.title">${t('apikey.title')}</h2>
+      <p class="subtitle" data-i18n="apikey.noModel">${t('apikey.noModel')}</p>
+      <div class="actions"><button class="btn" data-goto="model" data-i18n="common.back">${t('common.back')}</button></div>
+    </div>`;
+  }
+  const endpoint = model.compat === 'anthropic-compatible'
+    ? (model.api?.anthropicCompatible || model.api?.openaiCompatible || '')
+    : (model.api?.openaiCompatible || '');
+  return `
+  <div class="card">
+    <h2 data-i18n="apikey.title">${t('apikey.title')}</h2>
+    <p class="subtitle" data-i18n="apikey.subtitle">${t('apikey.subtitle')}</p>
+    <p><label data-i18n="apikey.model">${t('apikey.model')}</label><div class="code-block">${esc(model.name)}</div></p>
+    <p><label data-i18n="apikey.endpoint">${t('apikey.endpoint')}</label><div class="code-block">${esc(endpoint || '—')}</div></p>
+    <label for="apikey1" data-i18n="apikey.key">${t('apikey.key')}</label>
+    <input type="password" id="apikey1" autocomplete="off" placeholder="sk-..." />
+    <label for="apikey2" style="margin-top:10px" data-i18n="apikey.key2">${t('apikey.key2')}</label>
+    <input type="password" id="apikey2" autocomplete="off" placeholder="sk-..." />
+    <div id="key-status" style="margin-top:10px"></div>
+    <div class="actions" style="flex-wrap:wrap">
+      <button class="btn" data-goto="model" data-i18n="common.back">${t('common.back')}</button>
+      <button class="btn" id="btn-verify" data-i18n="apikey.verify">${t('apikey.verify')}</button>
+      <button class="btn primary" id="btn-write" data-i18n="apikey.write">${t('apikey.write')}</button>
+      <button class="btn" id="btn-skip" data-i18n="apikey.skip">${t('apikey.skip')}</button>
+    </div>
+  </div>`;
+};
+
 viewRenderers.placeholder = () => `
   <div class="card">
     <h2 data-i18n="m2.title">${t('m2.title')}</h2>
@@ -178,19 +244,18 @@ viewRenderers.placeholder = () => `
     </div>
   </div>`;
 
-viewRenderers.finish = () => `
+viewRenderers.finish = () => {
+  const agent = (state.agentsList || []).find((a) => a.id === state.agentId);
+  return `
   <div class="card">
-    <h2 data-i18n="finish.preview.title">${t('finish.preview.title')}</h2>
-    <p class="subtitle" data-i18n="finish.preview.body">${t('finish.preview.body')}</p>
-    <h3>${t('common.plan')}</h3>
-    <div class="code-block">${esc(JSON.stringify({
-      platform: state.platform, mode: state.mode, agent: state.agentId,
-      workDir: state.workDir, commands: state.plan?.commands || [],
-    }, null, 2))}</div>
-    <div class="actions">
-      <button class="btn" data-goto="folder" data-i18n="common.back">${t('common.back')}</button>
-    </div>
+    <h2 data-i18n="finish.title">${t('finish.title')}</h2>
+    <p class="subtitle" data-i18n="finish.subtitle">${t('finish.subtitle')}</p>
+    <p><label data-i18n="finish.launch">${t('finish.launch')}</label><div class="code-block">$ ${esc(agent?.launchCommand || state.agentId)}</div></p>
+    <p><label data-i18n="finish.configWritten">${t('finish.configWritten')}</label><div class="code-block">${esc((state.lastConfigFiles || []).join('\n') || '—')}</div></p>
+    <p><label data-i18n="finish.doctor">${t('finish.doctor')}</label><div class="code-block">$ agent-guide doctor</div></p>
+    <div class="actions"><button class="btn" data-goto="apikey" data-i18n="common.back">${t('common.back')}</button></div>
   </div>`;
+};
 
 viewRenderers.prereqs = async () => {
   const plan = state.plan;
@@ -394,7 +459,7 @@ function bindActions() {
 
   const nextBtn = document.getElementById('btn-next');
   if (nextBtn) nextBtn.addEventListener('click', () => {
-    const order = { welcome: 'platform', platform: 'agent', agent: 'permission' };
+    const order = { welcome: 'platform', platform: 'agent', agent: 'permission', model: 'apikey' };
     goto(order[state.step]);
   });
 
@@ -422,6 +487,73 @@ function bindActions() {
       el.classList.add('selected');
     });
   });
+
+  document.querySelectorAll('.model-card[data-model]').forEach((el) => {
+    el.addEventListener('click', () => {
+      if (el.dataset.disabled) return; // unsupported combos are not selectable
+      state.modelId = el.dataset.model;
+      document.querySelectorAll('.model-card').forEach((c) => c.classList.remove('selected'));
+      el.classList.add('selected');
+    });
+  });
+
+  const verifyBtn = document.getElementById('btn-verify');
+  if (verifyBtn) {
+    verifyBtn.addEventListener('click', async () => {
+      const key = document.getElementById('apikey1')?.value?.trim();
+      const key2 = document.getElementById('apikey2')?.value?.trim();
+      const statusEl = document.getElementById('key-status');
+      if (!key || !key2) { statusEl.innerHTML = `<span class="badge err">${t('apikey.verify.fail')} (empty)</span>`; return; }
+      if (key !== key2) { statusEl.innerHTML = `<span class="badge err">${t('apikey.mismatch')}</span>`; return; }
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = t('apikey.verify.running');
+      try {
+        const data = await api(`/api/models?agentId=${encodeURIComponent(state.agentId || '')}`);
+        const model = data.models.find((m) => m.id === state.modelId);
+        const mode = model?.compat === 'anthropic-compatible' ? 'anthropic' : 'openai';
+        const baseUrl = mode === 'anthropic'
+          ? (model?.api?.anthropicCompatible || model?.api?.openaiCompatible)
+          : model?.api?.openaiCompatible;
+        const r = await api('/api/keys/verify', { method: 'POST', body: JSON.stringify({ baseUrl, apiKey: key, mode }) });
+        statusEl.innerHTML = `<span class="badge ok">${t('apikey.verify.ok')}</span>`;
+      } catch (err) {
+        statusEl.innerHTML = `<span class="badge err">${t('apikey.verify.fail')}${esc(err.message)}</span>`;
+      }
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = t('apikey.verify');
+    });
+  }
+
+  const writeBtn = document.getElementById('btn-write');
+  if (writeBtn) {
+    writeBtn.addEventListener('click', async () => {
+      const key = document.getElementById('apikey1')?.value?.trim();
+      const key2 = document.getElementById('apikey2')?.value?.trim();
+      const statusEl = document.getElementById('key-status');
+      if (!key || key !== key2) {
+        statusEl.innerHTML = `<span class="badge err">${key ? t('apikey.mismatch') : t('apikey.verify.fail') + ' (empty)'}</span>`;
+        return;
+      }
+      writeBtn.disabled = true;
+      writeBtn.textContent = '…';
+      try {
+        const r = await api('/api/config', {
+          method: 'POST',
+          body: JSON.stringify({ agentId: state.agentId, modelId: state.modelId, apiKey: key }),
+        });
+        state.lastConfigFiles = r.result?.files || [];
+        statusEl.innerHTML = `<span class="badge ok">${t('apikey.written')}</span>`;
+        await goto('finish');
+      } catch (err) {
+        statusEl.innerHTML = `<span class="badge err">${esc(err.message)}</span>`;
+        writeBtn.disabled = false;
+        writeBtn.textContent = t('apikey.write');
+      }
+    });
+  }
+
+  const skipBtn = document.getElementById('btn-skip');
+  if (skipBtn) skipBtn.addEventListener('click', () => goto('finish'));
 
   const agree = document.getElementById('btn-agree');
   if (agree) agree.addEventListener('click', async () => {
@@ -478,6 +610,10 @@ async function boot() {
   if (state.agentId) {
     try { await selectAgent(state.agentId); } catch { /* plan may not exist yet */ }
   }
+  try {
+    const ag = await api('/api/agents');
+    state.agentsList = ag.agents;
+  } catch { /* non-fatal */ }
 
   const dictData = await api(`/api/i18n?lang=${encodeURIComponent(state.lang)}`);
   state.dict = dictData.dict;

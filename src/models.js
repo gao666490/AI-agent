@@ -27,6 +27,7 @@ export async function modelsForAgent(agentId) {
     name: m.name,
     region: m.region,
     models: m.models ?? [],
+    api: m.api ?? null,
     compat: m.compat?.[agentId] ?? 'unsupported',
     verified: m.verified === true,
   }));
