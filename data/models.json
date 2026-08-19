@@ -9,15 +9,20 @@
       "id": "deepseek",
       "name": "DeepSeek",
       "region": "cn",
-      "verified": false,
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "官方文档：OpenAI 兼容 base 为 https://api.deepseek.com（/v1 后缀已不在官方文档）；官方 Anthropic 兼容端点 https://api.deepseek.com/anthropic（Claude Code 可直接接入，无需 router）。",
+        "deepseek-chat/deepseek-reasoner 已于 2026-07 停用，当前模型为 deepseek-v4-flash / deepseek-v4-pro。ToS 明确允许第三方 Agent（官方 Agent Integrations 指南）。"
+      ],
       "api": {
-        "openaiCompatible": "https://api.deepseek.com/v1",
-        "anthropicCompatible": null,
+        "openaiCompatible": "https://api.deepseek.com",
+        "anthropicCompatible": "https://api.deepseek.com/anthropic",
         "auth": "Bearer <key>"
       },
-      "models": ["deepseek-chat", "deepseek-reasoner"],
+      "models": ["deepseek-v4-flash", "deepseek-v4-pro"],
       "compat": {
-        "claude-code": "router",
+        "claude-code": "anthropic-compatible",
         "codex": "openai-compatible",
         "hermes": "native",
         "gemini": "unsupported",
@@ -26,21 +31,96 @@
         "goose": "openai-compatible"
       }
     },
-    { "id": "qwen", "name": "通义千问 Qwen (DashScope)", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "zhipu", "name": "智谱 GLM", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "moonshot", "name": "Kimi (Moonshot)", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
+    {
+      "id": "qwen",
+      "name": "通义千问 Qwen (DashScope)",
+      "region": "cn",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "OpenAI 兼容 https://dashscope.aliyuncs.com/compatible-mode/v1（北京）；Anthropic 兼容 https://dashscope.aliyuncs.com/apps/anthropic。",
+        "生产环境推荐业务空间专属域名 {WorkspaceId}.{region}.maas.aliyuncs.com/compatible-mode/v1，且 base URL 必须与 Key 计费方案配套（dashscope 域名 vs 业务空间域名混用报 401）。qwen-plus/max/turbo 已下线，当前 qwen3.x 系列。"
+      ],
+      "api": {
+        "openaiCompatible": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "anthropicCompatible": "https://dashscope.aliyuncs.com/apps/anthropic",
+        "auth": "Bearer <key>"
+      },
+      "models": ["qwen3.8-max", "qwen3.7-plus", "qwen3.7-flash", "qwen3.5-omni-plus"],
+      "compat": {
+        "claude-code": "anthropic-compatible",
+        "codex": "openai-compatible",
+        "hermes": "openai-compatible",
+        "gemini": "unsupported",
+        "aider": "openai-compatible",
+        "opencode": "openai-compatible",
+        "goose": "openai-compatible"
+      }
+    },
+    {
+      "id": "zhipu",
+      "name": "智谱 GLM",
+      "region": "cn",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "OpenAI 兼容 https://open.bigmodel.cn/api/paas/v4（标准）；Coding Plan 用 /api/coding/paas/v4，Codex 用 /api/v1。Anthropic 兼容 https://open.bigmodel.cn/api/anthropic。",
+        "glm-4-plus/glm-4-flash 旧名已下线；当前 glm-5.x / glm-4.7 / glm-4.6 / glm-4.5 系列（glm-4.7-flash 免费）。官方提供 Claude Code/Goose/Codex/Cline 接入文档。"
+      ],
+      "api": {
+        "openaiCompatible": "https://open.bigmodel.cn/api/paas/v4",
+        "anthropicCompatible": "https://open.bigmodel.cn/api/anthropic",
+        "auth": "Bearer <key>"
+      },
+      "models": ["glm-5.3", "glm-5.2", "glm-5", "glm-5-turbo", "glm-4.7", "glm-4.7-flash", "glm-4.6", "glm-4.5"],
+      "compat": {
+        "claude-code": "anthropic-compatible",
+        "codex": "openai-compatible",
+        "hermes": "openai-compatible",
+        "gemini": "unsupported",
+        "aider": "openai-compatible",
+        "opencode": "openai-compatible",
+        "goose": "openai-compatible"
+      }
+    },
+    {
+      "id": "moonshot",
+      "name": "Kimi (Moonshot)",
+      "region": "cn",
+      "verified": true,
+      "verifiedAt": "2026-01-02",
+      "notes": [
+        "OpenAI 兼容 https://api.moonshot.cn/v1；Anthropic 兼容 https://api.moonshot.cn/anthropic（官方 Claude Code 接入指南）。",
+        "kimi-k2 系列已下线，kimi-k2.5 停新注册；当前 kimi-k3 / kimi-k2.7-code / kimi-k2.6。"
+      ],
+      "api": {
+        "openaiCompatible": "https://api.moonshot.cn/v1",
+        "anthropicCompatible": "https://api.moonshot.cn/anthropic",
+        "auth": "Bearer <key>"
+      },
+      "models": ["kimi-k3", "kimi-k2.7-code", "kimi-k2.6"],
+      "compat": {
+        "claude-code": "anthropic-compatible",
+        "codex": "openai-compatible",
+        "hermes": "openai-compatible",
+        "gemini": "unsupported",
+        "aider": "openai-compatible",
+        "opencode": "openai-compatible",
+        "goose": "openai-compatible"
+      }
+    },
     { "id": "doubao", "name": "豆包 (火山方舟 Ark)", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
     { "id": "minimax", "name": "MiniMax", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
     { "id": "iflytek", "name": "讯飞星火", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
     { "id": "hunyuan", "name": "腾讯混元", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
     { "id": "stepfun", "name": "阶跃星辰", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
     { "id": "baichuan", "name": "百川", "region": "cn", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "openai", "name": "OpenAI", "region": "global", "verified": false, "api": { "openaiCompatible": "https://api.openai.com/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "anthropic", "name": "Anthropic Claude", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": "https://api.anthropic.com", "auth": "x-api-key <key>" }, "models": [], "compat": {} },
-    { "id": "google", "name": "Google Gemini", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "grok", "name": "xAI Grok", "region": "global", "verified": false, "api": { "openaiCompatible": "https://api.x.ai/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "mistral", "name": "Mistral", "region": "global", "verified": false, "api": { "openaiCompatible": "https://api.mistral.ai/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "llama", "name": "Meta Llama (hosted)", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} },
-    { "id": "openrouter", "name": "OpenRouter", "region": "global", "verified": false, "api": { "openaiCompatible": "https://openrouter.ai/api/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": [], "compat": {} }
+    { "id": "openai", "name": "OpenAI", "region": "global", "verified": false, "api": { "openaiCompatible": "https://api.openai.com/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": ["gpt-4o", "gpt-4o-mini", "o3", "o4-mini"], "compat": { "codex": "openai-compatible", "hermes": "openai-compatible", "aider": "openai-compatible", "opencode": "openai-compatible", "goose": "openai-compatible", "claude-code": "unsupported", "gemini": "unsupported" } },
+    { "id": "anthropic", "name": "Anthropic Claude", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": "https://api.anthropic.com", "auth": "x-api-key <key>" }, "models": ["claude-opus-4-1", "claude-sonnet-4-5", "claude-haiku-4-5"], "compat": { "claude-code": "native", "codex": "unsupported", "hermes": "unsupported", "gemini": "unsupported", "aider": "unsupported", "opencode": "unsupported", "goose": "unsupported" } },
+    { "id": "google", "name": "Google Gemini", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": ["gemini-2.5-pro", "gemini-2.5-flash"], "compat": { "gemini": "native", "claude-code": "unsupported", "codex": "unsupported", "hermes": "unsupported", "aider": "unsupported", "opencode": "unsupported", "goose": "unsupported" } },
+    { "id": "grok", "name": "xAI Grok", "region": "global", "verified": false, "api": { "openaiCompatible": "https://api.x.ai/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": ["grok-4", "grok-4-fast"], "compat": { "codex": "openai-compatible", "hermes": "openai-compatible", "aider": "openai-compatible", "opencode": "openai-compatible", "goose": "openai-compatible", "claude-code": "unsupported", "gemini": "unsupported" } },
+    { "id": "mistral", "name": "Mistral", "region": "global", "verified": false, "api": { "openaiCompatible": "https://api.mistral.ai/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": ["mistral-large-3", "mistral-small-3"], "compat": { "codex": "openai-compatible", "hermes": "openai-compatible", "aider": "openai-compatible", "opencode": "openai-compatible", "goose": "openai-compatible", "claude-code": "unsupported", "gemini": "unsupported" } },
+    { "id": "llama", "name": "Meta Llama (hosted)", "region": "global", "verified": false, "api": { "openaiCompatible": null, "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": ["llama-4-maverick", "llama-4-scout"], "compat": { "claude-code": "unsupported", "codex": "unsupported", "hermes": "unsupported", "gemini": "unsupported", "aider": "unsupported", "opencode": "unsupported", "goose": "unsupported" } },
+    { "id": "openrouter", "name": "OpenRouter", "region": "global", "verified": false, "api": { "openaiCompatible": "https://openrouter.ai/api/v1", "anthropicCompatible": null, "auth": "Bearer <key>" }, "models": ["anthropic/claude-sonnet-4.5", "deepseek/deepseek-v4-pro", "openai/gpt-4o"], "compat": { "codex": "openai-compatible", "hermes": "openai-compatible", "aider": "openai-compatible", "opencode": "openai-compatible", "goose": "openai-compatible", "claude-code": "router", "gemini": "unsupported" } }
   ]
 }
