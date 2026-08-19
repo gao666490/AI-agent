@@ -5,12 +5,14 @@ import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 import { loadState, saveState, confirmStep, sanitizeState, SCHEMA_VERSION } from './state.js';
 import { loadAgents, planForAgent } from './agents.js';
-import { modelsForAgent } from './models.js';
+import { modelsForAgent, loadModels } from './models.js';
 import { loadDict } from './i18n.js';
 import { tailLog } from './log.js';
 import { recipePlatform } from './detect.js';
 import { runCommand } from './exec.js';
 import { checkPrereqs } from './prereqs.js';
+import { writeProviderConfig } from './config-writer.js';
+import { verifyKey } from './verify.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const webDir = path.join(here, '..', 'web');
@@ -190,8 +192,17 @@ async function routeApi(req, res, pathname, url, ctx) {
   if (execMatch && method === 'POST') {
     return executeStep(req, res, execMatch[1], ctx);
   }
+  if (pathname === '/api/keys/verify' && method === 'POST') {
+    const body = await readBody(req);
+    if (!body.baseUrl || !body.apiKey) return send(res, 400, { error: 'baseUrl-and-apiKey-required' });
+    const mode = body.mode === 'anthropic' ? 'anthropic' : 'openai';
+    const result = await verifyKey({ baseUrl: body.baseUrl, apiKey: body.apiKey, mode });
+    return send(res, result.ok ? 200 : 400, { ok: result.ok, ...result });
+  }
+
+  // --- M3: config writing (design §7 POST /api/config) ------------------
   if (pathname === '/api/config' && method === 'POST') {
-    return send(res, 501, { error: 'config-writer-lands-in-M3' });
+    return writeConfig(req, res, ctx);
   }
   const routerMatch = pathname.match(/^\/api\/router\/(start|stop|status)$/);
   if (routerMatch && method === 'POST') {
@@ -277,6 +288,62 @@ async function executeStep(req, res, stepId, ctx) {
     ctx.executing = false;
     res.end();
   }
+}
+
+/**
+ * POST /api/config — verify the key, then write the provider config into the
+ * chosen agent's own config directory (design §7/§8). The key is kept only in
+ * memory (ctx.secrets for log masking) and in the agent config file — never
+ * in state.json.
+ */
+async function writeConfig(req, res, ctx) {
+  const body = await readBody(req).catch(() => ({}));
+  const agents = Array.isArray(ctx.agents) ? ctx.agents : await loadAgents();
+  const agent = agents.find((a) => a.id === (body.agentId || ctx.state.agentId));
+  if (!agent) return send(res, 404, { error: 'unknown-agent' });
+
+  const models = await loadModels();
+  const model = models.find((m) => m.id === body.modelId || m.name === body.modelName);
+  if (!model) return send(res, 404, { error: 'unknown-model' });
+
+  const compat = model.compat?.[agent.id] || 'unsupported';
+  if (compat === 'unsupported') {
+    return send(res, 400, { error: 'incompatible', reason: `${agent.id} does not support ${model.id}` });
+  }
+  if (compat === 'router') {
+    return send(res, 501, { error: 'router-integration-lands-in-M4', hint: '该组合需要 claude-code-router（M4）' });
+  }
+  if (agent.id === 'claude-code' && compat !== 'anthropic-compatible') {
+    return send(res, 501, { error: 'router-integration-lands-in-M4', hint: 'Claude Code 接入 OpenAI 兼容端点需要 router（M4）' });
+  }
+
+  const apiKey = body.apiKey;
+  if (!apiKey) return send(res, 400, { error: 'api-key-required' });
+  const baseUrl = body.baseUrl || model.api?.openaiCompatible;
+  const anthropicBase = compat === 'anthropic-compatible'
+    ? (body.anthropicBase || model.api?.anthropicCompatible || null)
+    : null;
+  if (!baseUrl && !anthropicBase) return send(res, 400, { error: 'no-endpoint' });
+
+  if (!body.skipVerify) {
+    const mode = anthropicBase ? 'anthropic' : 'openai';
+    const v = await verifyKey({ baseUrl: anthropicBase || baseUrl, apiKey, mode });
+    if (!v.ok) {
+      return send(res, 400, { error: 'key-verification-failed', detail: v });
+    }
+  }
+
+  ctx.secrets = [...(ctx.secrets || []), apiKey]; // mask in future execution logs
+  const result = await writeProviderConfig({
+    agent,
+    modelId: model.id,
+    modelName: body.modelName || null,
+    apiKey,
+    baseUrl: baseUrl || null,
+    anthropicBase,
+  });
+  ctx.log?.(`config written: ${agent.id} × ${model.id} -> ${result.status}`);
+  return send(res, result.status === 'ok' ? 200 : 400, { result });
 }
 
 /** Strip recipes to display-safe fields for the card list. */

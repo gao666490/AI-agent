@@ -95,12 +95,26 @@ test('/api/i18n returns the requested dictionary', async () => {
   assert.ok(body.dict['welcome.title']);
 });
 
-test('M2/M3 endpoints: config & router are explicit placeholders (501)', async () => {
-  assert.equal((await post('/api/config')).status, 501);
+test('M3/M4 endpoints: config requires an agent (404), router is M4 (501)', async () => {
+  assert.equal((await post('/api/config')).status, 404, 'no agent selected -> unknown-agent');
   assert.equal((await post('/api/router/start')).status, 501);
   const status = await post('/api/router/status');
   assert.equal(status.status, 200);
   assert.equal((await status.json()).running, false);
+});
+
+test('/api/keys/verify rejects missing fields', async () => {
+  const res = await post('/api/keys/verify', JSON.stringify({}));
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).error, 'baseUrl-and-apiKey-required');
+});
+
+test('/api/config rejects incompatible combos before writing', async () => {
+  await post('/api/state', JSON.stringify({ agentId: 'gemini', platform: 'windows' }));
+  const res = await post('/api/config', JSON.stringify({ modelId: 'deepseek', apiKey: 'sk-x', skipVerify: true }));
+  assert.equal(res.status, 400);
+  const body = await res.json();
+  assert.equal(body.error, 'incompatible', 'gemini × deepseek must be rejected by the compat matrix');
 });
 
 test('execute requires the step to be confirmed first (409)', async () => {
