@@ -79,6 +79,19 @@
   "finish.preview.title": "计划预览（M2 将在此处执行安装）",
   "finish.preview.body": "你已经走通了向导的完整流程。M2 里程碑将把确认后的命令逐步真实执行。",
 
+  "install.title": "安装执行",
+  "install.subtitle": "每一步都先展示确切命令，确认后才会执行；日志实时显示且不含任何密钥。",
+  "install.confirm": "确认此步骤",
+  "install.run": "执行",
+  "install.running": "执行中…",
+  "install.done": "完成",
+  "install.fail": "失败",
+  "install.log": "执行日志",
+  "install.exit": "退出码",
+  "install.dryrun": "演练",
+  "install.confirmedBadge": "已确认",
+  "install.notConfirmed": "先确认再执行",
+
   "footer.disclaimer": "Agent Guide 是开源向导工具：只编排官方安装器，命令在执行前全部展示；本工具零遥测，API Key 仅写入本机 Agent 配置。",
 
   "dryrun.env": "环境:",

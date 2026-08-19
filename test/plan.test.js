@@ -17,6 +17,9 @@ test('plan for hermes on windows defaults to native (design D2)', async () => {
   assert.equal(plan.available, true);
   assert.equal(plan.mode, 'native');
   assert.equal(plan.commands.length, 1);
+  assert.equal(plan.steps.length, 1);
+  assert.equal(plan.steps[0].id, 'install');
+  assert.equal(plan.steps[0].command, plan.commands[0]);
   assert.ok(plan.commands[0].includes('hermes-agent.nousresearch.com'));
   assert.ok(plan.requires.includes('git'));
 });

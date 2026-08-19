@@ -9,6 +9,7 @@ import { modelsForAgent } from './models.js';
 import { loadDict } from './i18n.js';
 import { tailLog } from './log.js';
 import { recipePlatform } from './detect.js';
+import { runCommand } from './exec.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const webDir = path.join(here, '..', 'web');
@@ -171,13 +172,15 @@ async function routeApi(req, res, pathname, url, ctx) {
     return send(res, 200, { ok: true, step: confirmMatch[1], at: ctx.state.confirmed.at(-1)?.at });
   }
 
-  // --- M2+ placeholders (installed later in the milestone plan) ----------
-  if (pathname === '/api/config' && method === 'POST') {
-    return send(res, 501, { error: 'config-writer-lands-in-M3' });
-  }
+  // --- M2: step execution (SSE stream) ----------------------------------
+  // Design §8: execution requires the step to be confirmed first
+  // (confirmation token / audit trail), and only one step runs at a time.
   const execMatch = pathname.match(/^\/api\/steps\/([^/]+)\/execute$/);
   if (execMatch && method === 'POST') {
-    return send(res, 501, { error: 'execution-engine-lands-in-M2' });
+    return executeStep(req, res, execMatch[1], ctx);
+  }
+  if (pathname === '/api/config' && method === 'POST') {
+    return send(res, 501, { error: 'config-writer-lands-in-M3' });
   }
   const routerMatch = pathname.match(/^\/api\/router\/(start|stop|status)$/);
   if (routerMatch && method === 'POST') {
@@ -188,6 +191,69 @@ async function routeApi(req, res, pathname, url, ctx) {
   }
 
   return send(res, 404, { error: 'not found' });
+}
+
+/**
+ * POST /api/steps/:id/execute — run one confirmed plan step over SSE.
+ * Events: status (running), log (masked line), done ({code, durationMs, timedOut, dryRun}).
+ * Body: { dryRun?: true } for review/CI/testing; { confirm?: true } to
+ * confirm-and-run in one call (UI still uses the separate confirm endpoint).
+ */
+async function executeStep(req, res, stepId, ctx) {
+  const body = await readBody(req).catch(() => ({}));
+
+  const confirmed = Array.isArray(ctx.state.confirmed) && ctx.state.confirmed.some((c) => c.id === stepId);
+  if (!confirmed && !body.confirm) {
+    return send(res, 409, { error: 'step-not-confirmed' });
+  }
+  if (ctx.executing) {
+    return send(res, 409, { error: 'already-executing' });
+  }
+
+  const agents = Array.isArray(ctx.agents) ? ctx.agents : await loadAgents();
+  const agent = agents.find((a) => a.id === ctx.state.agentId);
+  const platformKey = ctx.state.platform || recipePlatform(ctx.env?.platform);
+  const plan = agent ? planForAgent(agent, platformKey, ctx.state.mode) : null;
+  const step = plan?.steps?.find((s) => s.id === stepId);
+  if (!step) {
+    return send(res, 404, { error: 'unknown-step', hint: 'select an agent and platform first' });
+  }
+
+  ctx.executing = true;
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  const sendEvent = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+
+  try {
+    sendEvent('status', { state: 'running', step: stepId });
+    const result = await runCommand({
+      command: step.command,
+      shell: step.shell ?? null,
+      cwd: ctx.state.workDir || undefined,
+      env: {},
+      timeoutMs: step.timeoutMs ?? 300000,
+      secrets: ctx.secrets || [],
+      dryRun: body.dryRun === true,
+      onLog: (line) => sendEvent('log', { line }),
+      onStatus: (s) => sendEvent('status', { state: s, step: stepId }),
+    });
+    ctx.log?.(`step ${stepId} -> exit ${result.code}${result.timedOut ? ' (timeout)' : ''} ${result.durationMs}ms`);
+    sendEvent('done', {
+      step: stepId,
+      code: result.code,
+      durationMs: result.durationMs,
+      timedOut: result.timedOut,
+      dryRun: result.dryRun === true,
+    });
+  } catch (err) {
+    sendEvent('done', { step: stepId, code: -1, error: err?.message || String(err) });
+  } finally {
+    ctx.executing = false;
+    res.end();
+  }
 }
 
 /** Strip recipes to display-safe fields for the card list. */

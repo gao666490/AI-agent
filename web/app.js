@@ -187,6 +187,112 @@ viewRenderers.finish = () => `
     </div>
   </div>`;
 
+viewRenderers.install = () => {
+  const plan = state.plan;
+  if (!plan || !plan.steps || plan.steps.length === 0) {
+    return `
+    <div class="card">
+      <h2 data-i18n="m2.title">${t('m2.title')}</h2>
+      <p class="subtitle">${t('install.subtitle')}</p>
+      <div class="actions"><button class="btn" data-goto="folder" data-i18n="common.back">${t('common.back')}</button></div>
+    </div>`;
+  }
+  const cards = plan.steps.map((s, i) => {
+    const confirmed = state.confirmed.some((c) => c.id === s.id);
+    return `
+    <div class="card" id="step-${esc(s.id)}">
+      <h3>${i + 1}. ${esc(s.title || s.id)} <span class="badge ${confirmed ? 'ok' : ''}" id="badge-${esc(s.id)}">${confirmed ? t('install.confirmedBadge') : '—'}</span></h3>
+      <div class="plan-command">$ ${esc(s.command)}</div>
+      <div class="actions" style="margin-top:10px">
+        ${confirmed ? '' : `<button class="btn" data-confirm="${esc(s.id)}">${t('install.confirm')}</button>`}
+        <button class="btn primary" data-run="${esc(s.id)}" ${confirmed ? '' : 'disabled'}>${t('install.run')}</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `
+  <div class="card">
+    <h2 data-i18n="install.title">${t('install.title')}</h2>
+    <p class="subtitle" data-i18n="install.subtitle">${t('install.subtitle')}</p>
+  </div>
+  ${cards}
+  <div class="card">
+    <h3 data-i18n="install.log">${t('install.log')}</h3>
+    <pre class="exec-log" id="exec-log"></pre>
+  </div>
+  <div class="actions">
+    <button class="btn" data-goto="folder" data-i18n="common.back">${t('common.back')}</button>
+    <button class="btn primary" data-goto="model" data-i18n="common.next">${t('common.next')}</button>
+  </div>`;
+};
+
+/* ---------------- execution (SSE) ---------------- */
+
+function appendLog(line) {
+  const el = document.getElementById('exec-log');
+  if (!el) return;
+  el.textContent += line + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function handleSse(frame, stepId, btn) {
+  let event = 'message';
+  let data = '';
+  for (const line of frame.split('\n')) {
+    if (line.startsWith('event:')) event = line.slice(6).trim();
+    else if (line.startsWith('data:')) data += line.slice(5).trim();
+  }
+  if (!data) return;
+  let obj;
+  try { obj = JSON.parse(data); } catch { return; }
+
+  if (event === 'log') {
+    appendLog(obj.line);
+  } else if (event === 'done') {
+    appendLog(`[${t('install.exit')} ${obj.code}${obj.dryRun ? ' · ' + t('install.dryrun') : ''}${obj.timedOut ? ' · timeout' : ''}]`);
+    if (btn) { btn.disabled = false; btn.textContent = t('install.run'); }
+    const badge = document.getElementById(`badge-${stepId}`);
+    if (badge) {
+      badge.textContent = obj.code === 0 ? '✓ ' + t('install.done') : '✗ ' + t('install.fail');
+      badge.className = 'badge ' + (obj.code === 0 ? 'ok' : 'err');
+    }
+  }
+}
+
+async function executeStep(stepId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = t('install.running'); }
+  appendLog(`> ${stepId} …`);
+  try {
+    const res = await fetch(`/api/steps/${encodeURIComponent(stepId)}/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Agent-Guide-Token': state.token },
+      body: '{}',
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      appendLog(`[error] ${e.error || res.status}`);
+      if (btn) { btn.disabled = false; btn.textContent = t('install.run'); }
+      return;
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n\n')) >= 0) {
+        const frame = buf.slice(0, idx);
+        buf = buf.slice(idx + 2);
+        handleSse(frame, stepId, btn);
+      }
+    }
+  } catch (err) {
+    appendLog(`[error] ${err.message}`);
+    if (btn) { btn.disabled = false; btn.textContent = t('install.run'); }
+  }
+}
+
 /* ---------------- step logic ---------------- */
 
 function recipePlatformNow() {
@@ -286,9 +392,22 @@ function bindActions() {
   if (folderBtn) {
     folderBtn.addEventListener('click', () => {
       state.workDir = document.getElementById('workdir')?.value?.trim() || null;
-      goto(state.mode === 'wsl' ? 'prereqs' : 'model');
+      goto('install');
     });
   }
+
+  document.querySelectorAll('[data-confirm]').forEach((el) => {
+    el.addEventListener('click', async () => {
+      await api(`/api/steps/${encodeURIComponent(el.dataset.confirm)}/confirm`, { method: 'POST', body: '{}' });
+      const data = await api('/api/state');
+      state.confirmed = data.state.confirmed;
+      await render();
+    });
+  });
+
+  document.querySelectorAll('[data-run]').forEach((el) => {
+    el.addEventListener('click', () => executeStep(el.dataset.run, el));
+  });
 
   const workdir = document.getElementById('workdir');
   if (workdir && state.mode === 'wsl') {

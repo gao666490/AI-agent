@@ -79,6 +79,19 @@
   "finish.preview.title": "Plan Preview (M2 executes the install here)",
   "finish.preview.body": "You walked through the complete wizard flow. Milestone M2 will execute the confirmed commands step by step.",
 
+  "install.title": "Install",
+  "install.subtitle": "Each step shows the exact command first and only runs after you confirm; logs stream live and never contain secrets.",
+  "install.confirm": "Confirm step",
+  "install.run": "Run",
+  "install.running": "Running…",
+  "install.done": "Done",
+  "install.fail": "Failed",
+  "install.log": "Execution log",
+  "install.exit": "Exit code",
+  "install.dryrun": "dry-run",
+  "install.confirmedBadge": "Confirmed",
+  "install.notConfirmed": "Confirm first",
+
   "footer.disclaimer": "Agent Guide is an open-source wizard: it only orchestrates official installers, shows every command before running; zero telemetry; API keys are written only into local agent configs.",
 
   "dryrun.env": "Environment:",

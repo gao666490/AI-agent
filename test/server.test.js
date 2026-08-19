@@ -1,8 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 import { createServer, generateToken } from '../src/server.js';
 import { detect } from '../src/detect.js';
 import { defaultState } from '../src/state.js';
+
+// Isolate state/log writes from the real home directory.
+const tmpHome = await fs.mkdtemp(path.join(os.tmpdir(), 'agent-guide-srv-'));
+process.env.AGENT_GUIDE_HOME = tmpHome;
 
 const token = generateToken();
 const env = await detect();
@@ -19,6 +26,13 @@ const port = server.address().port;
 const base = `http://127.0.0.1:${port}`;
 
 test.after(() => server.close());
+
+const auth = { 'X-Agent-Guide-Token': token };
+const post = (p, body = '{}') => fetch(`${base}${p}`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', ...auth },
+  body,
+});
 
 async function get(path, headers = {}) {
   return fetch(`${base}${path}`, { headers });
@@ -80,18 +94,48 @@ test('/api/i18n returns the requested dictionary', async () => {
   assert.ok(body.dict['welcome.title']);
 });
 
-test('M2/M3 endpoints are explicit placeholders (501)', async () => {
-  const post = (path, body = '{}') => fetch(`${base}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Agent-Guide-Token': token },
-    body,
-  });
-  assert.equal((await post('/api/steps/install/execute')).status, 501);
+test('M2/M3 endpoints: config & router are explicit placeholders (501)', async () => {
   assert.equal((await post('/api/config')).status, 501);
   assert.equal((await post('/api/router/start')).status, 501);
   const status = await post('/api/router/status');
   assert.equal(status.status, 200);
   assert.equal((await status.json()).running, false);
+});
+
+test('execute requires the step to be confirmed first (409)', async () => {
+  const res = await post('/api/steps/install/execute');
+  assert.equal(res.status, 409);
+  assert.equal((await res.json()).error, 'step-not-confirmed');
+});
+
+test('execute unknown step 404s even when confirmed', async () => {
+  await post('/api/state', JSON.stringify({ agentId: 'hermes', platform: 'windows', mode: 'native' }));
+  await post('/api/steps/nope/confirm');
+  const res = await post('/api/steps/nope/execute');
+  assert.equal(res.status, 404);
+});
+
+test('execute confirmed step streams SSE events (dry-run, no side effects)', async () => {
+  await post('/api/state', JSON.stringify({ agentId: 'hermes', platform: 'windows', mode: 'native' }));
+  await post('/api/steps/install/confirm');
+  const res = await post('/api/steps/install/execute', JSON.stringify({ dryRun: true }));
+  assert.equal(res.status, 200);
+  const text = await res.text();
+  assert.ok(text.includes('event: status'), 'status event present');
+  assert.ok(text.includes('event: log'), 'log event present');
+  assert.ok(text.includes('event: done'), 'done event present');
+  assert.ok(text.includes('"code":0'));
+  assert.ok(text.includes('"dryRun":true'));
+  assert.ok(text.includes('hermes-agent.nousresearch.com'), 'dry-run echoes the command text without executing it');
+});
+
+test('execute respects the one-at-a-time lock', async () => {
+  await post('/api/state', JSON.stringify({ agentId: 'hermes', platform: 'windows', mode: 'native' }));
+  await post('/api/steps/install/confirm');
+  const first = post('/api/steps/install/execute', JSON.stringify({ dryRun: true }));
+  const second = await post('/api/steps/install/execute', JSON.stringify({ dryRun: true }));
+  await first;
+  assert.ok([200, 409].includes(second.status), `second concurrent call must be 409 (got ${second.status})`);
 });
 
 test('step confirmation records audit trail', async () => {

@@ -156,6 +156,14 @@ label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 
   font-family: var(--mono); font-size: 12.5px;
   white-space: pre-wrap; word-break: break-all;
 }
+.exec-log {
+  background: #0b0e14; border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px;
+  font-family: var(--mono); font-size: 12px;
+  height: 260px; overflow-y: auto;
+  white-space: pre-wrap; word-break: break-all;
+  margin: 8px 0 0;
+}
 .notice {
   border: 1px solid var(--warn); background: rgba(245, 166, 35, 0.08);
   color: var(--warn); border-radius: 8px; padding: 10px 14px; font-size: 13px;
