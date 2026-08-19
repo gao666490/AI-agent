@@ -238,12 +238,24 @@ async function executeStep(req, res, stepId, ctx) {
   });
   const sendEvent = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 
+  // Work dir: create it for native installs; WSL-mode dirs are WSL paths
+  // (e.g. ~/agents/...) and must never touch the Windows filesystem.
+  let cwd = ctx.state.workDir || undefined;
+  if (cwd && step.shell !== 'wsl-bash') {
+    try {
+      await fs.mkdir(cwd, { recursive: true });
+    } catch (err) {
+      cwd = undefined;
+      sendEvent('log', { line: `[warn] workdir unavailable (${err?.message || err}), running without cwd` });
+    }
+  }
+
   try {
     sendEvent('status', { state: 'running', step: stepId });
     const result = await runCommand({
       command: step.command,
       shell: step.shell ?? null,
-      cwd: ctx.state.workDir || undefined,
+      cwd,
       env: {},
       timeoutMs: step.timeoutMs ?? 300000,
       secrets: ctx.secrets || [],
