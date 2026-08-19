@@ -32,12 +32,12 @@ npm test
 
 ```
 bin/agent-guide.js    CLI 入口（无依赖）
-src/                  Node 服务：server / state / detect / agents / models / i18n / log
-data/agents.json      7 个 Agent 配方（目录驱动，社区可 PR）
+src/                  Node 服务：server / state / detect / agents / models / i18n / log / exec / prereqs
+data/agents.json      7 个 Agent 配方（目录驱动，社区可 PR；含分步安装步骤 steps）
 data/models.json      模型目录与兼容矩阵（端点待核验）
 i18n/                 zh-CN / en 字典（key 集合一致，CI 校验）
 web/                  浏览器向导（原生 HTML/CSS/JS，无构建步骤）
-test/                 node:test 单测（state / i18n / plan / server）
+test/                 node:test 单测（state / i18n / plan / schema / exec / prereqs / server）
 ```
 
 ## 安全设计 / Security
@@ -50,8 +50,8 @@ test/                 node:test 单测（state / i18n / plan / server）
 
 | 里程碑 | 内容 | 状态 |
 |---|---|---|
-| M1 骨架 | npm 包 + CLI + 本地服务 + 浏览器 UI + i18n + 环境检测 + state 持久化 | ✅ 开发中 |
-| M2 安装引擎 | 7 Agent 配方核验 + 分步确认执行器 + 计划汇总页 | ⏳ |
+| M1 骨架 | npm 包 + CLI + 本地服务 + 浏览器 UI + i18n + 环境检测 + state 持久化 | ✅ 完成 |
+| M2 安装引擎 | 分步确认执行器（SSE 流式日志）+ 前置环境确认 + 计划汇总页 + 7 Agent 配方核验 | 🚧 进行中 |
 | M3 模型接入 | 端点核验 + 兼容矩阵 + 配置写入器 | ⏳ |
 | M4 Router 与 WSL | claude-code-router 集成 + WSL/Ubuntu 流程 + 提权 + 重启恢复 | ⏳ |
 | M5 打磨与发布 | doctor、日志、npm 发布、README 双语、验收清单 | ⏳ |
