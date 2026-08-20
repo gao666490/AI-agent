@@ -38,8 +38,8 @@ An in-browser wizard that installs and configures mainstream coding agents on **
 
 ```bash
 # 克隆后运行（零 npm 依赖，无需 npm install）
-git clone <repo-url>
-cd agent-guide
+git clone https://github.com/gao666490/AI-agent.git
+cd AI-agent
 node bin/agent-guide.js            # 启动向导并打开浏览器
 ```
 
