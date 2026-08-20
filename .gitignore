@@ -1,6 +1,17 @@
+# Node
 node_modules/
-*.log
+npm-debug.log*
+
+# OS / editor
 .DS_Store
 Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Secrets & local state (never commit API keys or wizard state)
+.env
 .agent-guide/
 coverage/
+*.log
+*.tmp
