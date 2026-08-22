@@ -10,7 +10,12 @@
       "gemini": ["https://www.npmjs.com/package/@google/gemini-cli"],
       "aider": ["https://aider.chat/docs/install.html", "https://pypi.org/project/aider-chat/", "https://aider.chat/2025/01/15/uv.html"],
       "opencode": ["https://www.npmjs.com/package/opencode-ai", "https://opencode.ai/docs", "https://github.com/sst/opencode"],
-      "goose": ["https://github.com/block/goose"]
+      "goose": [
+        "https://goose.ac.cn/goose/docs/getting-started/installation/ (official docs mirror)",
+        "https://formulae.brew.sh/api/formula/block-goose-cli.json (brew formula 1.47.0 verified)",
+        "https://www.npmjs.com/package/@aaif/goose-binary-win32-x64 (official npm distribution, bin=goose.exe)",
+        "https://github.com/aaif-goose/goose (repo moved to aaif-goose org)"
+      ]
     }
   },
   "agents": [
@@ -401,26 +406,45 @@
     {
       "id": "goose",
       "name": "Goose",
-      "homepage": "https://github.com/block/goose",
+      "homepage": "https://github.com/aaif-goose/goose",
       "license": "Apache-2.0",
       "launchCommand": "goose",
-      "verified": false,
-      "verifiedAt": null,
+      "verified": true,
+      "verifiedAt": "2026-01-02",
       "notes": [
-        "官方渠道：winget（Windows）/ brew（macOS）/ 官方脚本（mac/linux）。npm 包 @block-opensource/goose 在 2026-01 核验时不存在，已从配方移除。",
-        "本环境无法直连 github.com 复核下载 URL，以下命令为官方文档基准，需人工 E2E 核验后翻转 verified（M2 收尾项）。"
+        "官方安装方式核验：brew cask block-goose / formula block-goose-cli 1.47.0 实测存在（formulae.brew.sh）；npm 官方分发 @aaif/goose-*（@aaif/goose-binary-win32-x64 0.20.2 实测存在，bin=goose.exe）；Linux/Windows 官方脚本 download_cli.sh / download_cli.ps1（URL 来自官方安装文档镜像 goose.ac.cn，GitHub 端点本环境不可直连，发布前建议真机复核一次）。",
+        "winget 无 Block 官方包（winget search 实测无；Pressly.Goose 是无关的数据库工具），已移除 winget 途径。官方仓库已迁移至 aaif-goose/goose 组织。",
+        "Windows 原生安装需在 Git Bash / MSYS2 或 PowerShell 中运行官方脚本；npm 途径跨平台一致。"
       ],
       "platforms": {
         "windows": {
           "recommended": "native",
           "choices": {
             "native": {
-              "label": "winget 安装（原生）",
+              "label": "PowerShell 官方脚本（原生）",
               "steps": [
-                { "id": "install", "title": "安装 Goose", "command": "winget install --id Block.Goose", "shell": "powershell", "timeoutMs": 600000 },
+                { "id": "install", "title": "安装 Goose", "command": "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/block/goose/main/download_cli.ps1' -OutFile \"$env:TEMP\\goose-install.ps1\"; & \"$env:TEMP\\goose-install.ps1\"", "shell": "powershell", "timeoutMs": 600000 },
                 { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "powershell", "timeoutMs": 60000, "verify": true }
               ],
               "requires": [],
+              "defaultWorkDir": "%USERPROFILE%\\agents\\goose"
+            },
+            "gitbash": {
+              "label": "Git Bash 官方脚本（需要 Git Bash）",
+              "steps": [
+                { "id": "install", "title": "安装 Goose", "command": "curl -fsSL https://github.com/block/goose/releases/download/stable/download_cli.sh | bash", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": ["git"],
+              "defaultWorkDir": "%USERPROFILE%\\agents\\goose"
+            },
+            "npm": {
+              "label": "npm 安装（官方分发）",
+              "steps": [
+                { "id": "install", "title": "安装 Goose", "command": "npm install -g @aaif/goose-binary-win32-x64", "shell": "powershell", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "powershell", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": ["node"],
               "defaultWorkDir": "%USERPROFILE%\\agents\\goose"
             }
           }
@@ -429,12 +453,30 @@
           "recommended": "native",
           "choices": {
             "native": {
-              "label": "brew 安装",
+              "label": "brew cask 安装（官方）",
               "steps": [
-                { "id": "install", "title": "安装 Goose", "command": "brew install goose", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "install", "title": "安装 Goose", "command": "brew install --cask block-goose", "shell": "bash", "timeoutMs": 600000 },
                 { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
               ],
               "requires": [],
+              "defaultWorkDir": "~/agents/goose"
+            },
+            "brew-cli": {
+              "label": "brew formula 安装",
+              "steps": [
+                { "id": "install", "title": "安装 Goose", "command": "brew install block-goose-cli", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": [],
+              "defaultWorkDir": "~/agents/goose"
+            },
+            "npm": {
+              "label": "npm 安装（官方分发）",
+              "steps": [
+                { "id": "install", "title": "安装 Goose", "command": "npm install -g @aaif/goose-binary-darwin-arm64", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": ["node"],
               "defaultWorkDir": "~/agents/goose"
             }
           }
@@ -449,6 +491,15 @@
                 { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
               ],
               "requires": [],
+              "defaultWorkDir": "~/agents/goose"
+            },
+            "npm": {
+              "label": "npm 安装（官方分发）",
+              "steps": [
+                { "id": "install", "title": "安装 Goose", "command": "npm install -g @aaif/goose-binary-linux-x64", "shell": "bash", "timeoutMs": 600000 },
+                { "id": "verify", "title": "验证安装", "command": "goose --version", "shell": "bash", "timeoutMs": 60000, "verify": true }
+              ],
+              "requires": ["node"],
               "defaultWorkDir": "~/agents/goose"
             }
           }

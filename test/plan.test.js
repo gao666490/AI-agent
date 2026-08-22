@@ -36,13 +36,11 @@ test('plan for claude-code on windows defaults to wsl (design D2)', async () => 
   assert.ok(plan.requires.includes('wsl'));
 });
 
-test('M2 verification pass: 6 of 7 recipes verified, goose pending E2E', async () => {
+test('all 7 agent recipes are verified with dates', async () => {
   const agents = await loadAgents();
-  const verified = agents.filter((a) => a.verified);
-  const unverified = agents.filter((a) => !a.verified);
-  assert.equal(verified.length, 6, 'claude-code/codex/hermes/gemini/aider/opencode verified');
-  assert.deepEqual(unverified.map((a) => a.id), ['goose'], 'goose remains the M2 wrap-up item');
-  assert.ok(verified.every((a) => a.verifiedAt), 'verified recipes carry a verification date');
+  assert.equal(agents.length, 7);
+  assert.ok(agents.every((a) => a.verified === true), 'all recipes verified');
+  assert.ok(agents.every((a) => a.verifiedAt), 'verified recipes carry a verification date');
 });
 
 test('recipePlatform maps node platforms to recipe keys', () => {

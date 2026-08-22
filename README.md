@@ -88,7 +88,7 @@ node bin/agent-guide.js --no-open  # 不自动打开浏览器
 | Gemini CLI | 原生 (npm) | 原生 | `gemini` |
 | Aider | 原生 (uv tool) | 原生 | `aider` |
 | OpenCode | **WSL**（原生为实验性） | 原生 (npm) | `opencode` |
-| Goose | winget | brew / 脚本 | `goose` |
+| Goose | 原生（PowerShell 官方脚本 / npm） | brew cask `block-goose` / 官方脚本 | `goose` |
 
 ### 国内模型（10，端点已核验）
 
