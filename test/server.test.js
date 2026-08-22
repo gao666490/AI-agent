@@ -95,12 +95,21 @@ test('/api/i18n returns the requested dictionary', async () => {
   assert.ok(body.dict['welcome.title']);
 });
 
-test('M3/M4 endpoints: config requires an agent (404), router is M4 (501)', async () => {
+test('M3/M4 endpoints: config requires an agent (404), router lifecycle works (dry-run)', async () => {
   assert.equal((await post('/api/config')).status, 404, 'no agent selected -> unknown-agent');
-  assert.equal((await post('/api/router/start')).status, 501);
-  const status = await post('/api/router/status');
+  // router start in dry-run mode (no real npm install / spawn in tests)
+  const start = await post('/api/router/start', JSON.stringify({ dryRun: true }));
+  assert.equal(start.status, 200);
+  const started = await start.json();
+  assert.equal(started.ok, true);
+  assert.equal(started.dryRun, true);
+  const status = await post('/api/router/status', JSON.stringify({}));
   assert.equal(status.status, 200);
-  assert.equal((await status.json()).running, false);
+  assert.equal((await status.json()).running, true);
+  const stop = await post('/api/router/stop', JSON.stringify({ dryRun: true }));
+  assert.equal(stop.status, 200);
+  const stopped = await stop.json();
+  assert.equal(stopped.running, false);
 });
 
 test('/api/keys/verify rejects missing fields', async () => {

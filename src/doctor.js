@@ -4,6 +4,7 @@ import os from 'node:os';
 import { detect, run } from './detect.js';
 import { loadAgents } from './agents.js';
 import { loadDict, t } from './i18n.js';
+import { statusCcr, ccrNodeOk } from './router.js';
 
 /** Config files written by the M3 config writer (per agent kind). */
 const CONFIG_PATHS = {
@@ -55,6 +56,17 @@ export async function printDoctor() {
     } catch { /* not written */ }
   }
   if (!anyConfig) console.log('  (none yet — run the wizard to install and configure an agent)');
+
+  console.log('');
+  console.log('Claude Code Router (CCR):');
+  const router = await statusCcr();
+  console.log(`  Node >=22: ${ccrNodeOk() ? '✓' : '⚠ need Node 22+ for CCR'}`);
+  console.log(`  installed: ${router.installed ? '✓' : '— not installed'}`);
+  console.log(`  running:   ${router.running ? '✓' : '— stopped'}`);
+  if (router.running) {
+    console.log(`  management: ${router.managementUrl || '(unknown port)'}`);
+    console.log(`  gateway:    ${router.gatewayPort ? `127.0.0.1:${router.gatewayPort}` : '(check CCR UI / gateway.config.json)'}`);
+  }
 }
 
 function parseNode(v) {

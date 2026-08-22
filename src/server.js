@@ -13,6 +13,7 @@ import { runCommand } from './exec.js';
 import { checkPrereqs } from './prereqs.js';
 import { writeProviderConfig } from './config-writer.js';
 import { verifyKey } from './verify.js';
+import { startCcr, stopCcr, statusCcr } from './router.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const webDir = path.join(here, '..', 'web');
 const i18nDir = path.join(here, '..', 'i18n');
@@ -209,10 +210,32 @@ async function routeApi(req, res, pathname, url, ctx) {
   }
   const routerMatch = pathname.match(/^\/api\/router\/(start|stop|status)$/);
   if (routerMatch && method === 'POST') {
-    if (routerMatch[1] === 'status') {
-      return send(res, 200, { running: false, reason: 'router-integration-lands-in-M4' });
+    const action = routerMatch[1];
+    if (action === 'start') {
+      const body = await readBody(req).catch(() => ({}));
+      const result = await startCcr({
+        port: body.port || null,
+        binOverride: body.binOverride || null,
+        dryRun: body.dryRun === true,
+        log: (line) => ctx.log?.(line),
+      });
+      if (result.ok && !result.dryRun && body.modelId && body.apiKey) {
+        ctx.secrets = [...(ctx.secrets || []), body.apiKey];
+        // Remember the target provider for the finish page / doctor.
+        ctx.routerProvider = { modelId: body.modelId, gatewayPort: result.gatewayPort || result.port };
+      }
+      return send(res, result.ok ? 200 : 500, result);
     }
-    return send(res, 501, { error: 'router-integration-lands-in-M4' });
+    if (action === 'stop') {
+      const body = await readBody(req).catch(() => ({}));
+      const result = await stopCcr({ binOverride: body.binOverride || null, dryRun: body.dryRun === true });
+      return send(res, result.ok ? 200 : 500, result);
+    }
+    if (action === 'status') {
+      const body = await readBody(req).catch(() => ({}));
+      const result = await statusCcr({ binOverride: body.binOverride || null });
+      return send(res, 200, result);
+    }
   }
 
   return send(res, 404, { error: 'not found' });
