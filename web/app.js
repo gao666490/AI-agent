@@ -186,11 +186,13 @@ viewRenderers.model = async () => {
       <div class="launch">${esc((m.models || []).join(' · ') || '—')}</div>
     </div>`;
   };
+  const geminiNotice = state.agentId === 'gemini' ? `<div class="notice" style="margin-bottom:14px">${t('gemini.notice')}</div>` : '';
   return `
   <div class="card">
     <h2 data-i18n="model.title">${t('model.title')}</h2>
     <p class="subtitle" data-i18n="model.subtitle">${t('model.subtitle')}</p>
   </div>
+  ${geminiNotice}
   <h3 class="group-title" data-i18n="model.group.cn">${t('model.group.cn')}</h3>
   <div class="grid">${cn.map(card).join('')}</div>
   <h3 class="group-title" data-i18n="model.group.global">${t('model.group.global')}</h3>
@@ -202,6 +204,20 @@ viewRenderers.model = async () => {
 };
 
 viewRenderers.apikey = async () => {
+  // Gemini CLI authenticates with a Google account — no API key flow.
+  if (state.agentId === 'gemini') {
+    return `
+    <div class="card">
+      <h2 data-i18n="gemini.title">${t('gemini.title')}</h2>
+      <p class="subtitle" data-i18n="gemini.body">${t('gemini.body')}</p>
+      <div class="code-block">$ gemini auth login</div>
+      <p class="subtitle" style="margin-top:10px" data-i18n="gemini.after">${t('gemini.after')}</p>
+      <div class="actions">
+        <button class="btn" data-goto="model" data-i18n="common.back">${t('common.back')}</button>
+        <button class="btn primary" data-goto="finish" data-i18n="common.continue">${t('common.continue')}</button>
+      </div>
+    </div>`;
+  }
   const data = await api(`/api/models?agentId=${encodeURIComponent(state.agentId || '')}`);
   const model = data.models.find((m) => m.id === state.modelId);
   if (!model) {

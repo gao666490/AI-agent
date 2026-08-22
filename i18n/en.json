@@ -115,6 +115,11 @@
   "model.compat.unsupported": "Unsupported",
   "model.select": "Select",
 
+  "gemini.notice": "Gemini CLI authenticates with a Google account and only supports Google Gemini models (no API key needed); other models are not selectable.",
+  "gemini.title": "Google Account Login",
+  "gemini.body": "Gemini CLI authenticates with your Google account — no API key needed. Run the command below in your terminal to sign in (a browser window will open):",
+  "gemini.after": "Once signed in, launch the agent with the gemini command.",
+
   "apikey.title": "API Key",
   "apikey.subtitle": "The key is written only into the agent's own config on this machine (restricted permissions) — never into wizard state or logs. You can verify it first, or skip and configure later.",
   "apikey.model": "Selected model",
