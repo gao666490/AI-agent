@@ -21,6 +21,7 @@
         "auth": "Bearer <key>"
       },
       "models": ["deepseek-v4-flash", "deepseek-v4-pro"],
+      "wireApi": "responses",
       "compat": {
         "claude-code": "anthropic-compatible",
         "codex": "openai-compatible",
@@ -246,7 +247,7 @@
       "verified": true,
       "verifiedAt": "2026-01-02",
       "notes": [
-        "OpenAI 兼容 https://api.baichuan-ai.com/v1（在线确认，401 需有效 Key）；无 Anthropic 兼容端点（Claude Code 不可直接接入）。",
+        "OpenAI 兼容 https://api.baichuan-ai.com/v1（在线确认，401 需有效 Key）；无 Anthropic 兼容端点，接入 Claude Code 需 claude-code-router（M4）。",
         "Baichuan4-Turbo 等仍在售，新增 M2/M3 系列；ToS 正文未能核验，接入前建议联系 openapi@baichuan-inc.com 确认。"
       ],
       "api": {
@@ -256,7 +257,7 @@
       },
       "models": ["Baichuan-M3-Plus", "Baichuan-M3", "Baichuan-M2-Plus", "Baichuan4-Turbo", "Baichuan4-Air", "Baichuan4", "Baichuan3-Turbo"],
       "compat": {
-        "claude-code": "unsupported",
+        "claude-code": "router",
         "codex": "openai-compatible",
         "hermes": "openai-compatible",
         "gemini": "unsupported",

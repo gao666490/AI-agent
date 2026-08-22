@@ -96,7 +96,8 @@
       "verifiedAt": "2026-01-02",
       "notes": [
         "npm @openai/codex 0.148.0 已核验存在；官方安装脚本见 openai/codex README（chatgpt.com/codex/install.sh / install.ps1，本环境不可直连复核，以官方 README 为准）。",
-        "Windows 原生支持；沙箱能力弱于 WSL2，已在配方文案说明。"
+        "Windows 原生支持；沙箱能力弱于 WSL2，已在配方文案说明。",
+        "Codex CLI 与 Codex 桌面版共用 ~/.codex/config.toml：向导写入的 provider 配置（forced_login_method=api + experimental_bearer_token）对两者同时生效，装好桌面版即可用图形界面接国内模型。"
       ],
       "platforms": {
         "windows": {

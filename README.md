@@ -83,7 +83,7 @@ node bin/agent-guide.js --no-open  # 不自动打开浏览器
 | Agent | Windows 推荐 | macOS / Linux | 启动命令 |
 |---|---|---|---|
 | Claude Code | **WSL2**（官方推荐） | 原生 | `claude` |
-| Codex CLI | 原生 | 原生 | `codex` |
+| Codex CLI | 原生（**CLI 与桌面版共用配置**） | 原生 | `codex` |
 | Hermes Agent | **原生**（官方支持，无需 WSL） | 原生 | `hermes` |
 | Gemini CLI | 原生 (npm) | 原生 | `gemini` |
 | Aider | 原生 (uv tool) | 原生 | `aider` |

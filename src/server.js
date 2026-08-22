@@ -405,6 +405,7 @@ async function writeConfig(req, res, ctx) {
     apiKey,
     baseUrl: baseUrl || null,
     anthropicBase,
+    wireApi: model.wireApi || 'chat',
   });
   ctx.log?.(`config written: ${agent.id} × ${model.id} -> ${result.status}`);
   return send(res, result.status === 'ok' ? 200 : 400, { result });
