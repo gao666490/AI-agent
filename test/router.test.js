@@ -78,9 +78,9 @@ test('gcrStart dry-run writes env and reports ok without spawning', async () => 
   assert.equal(r.port, GCR_DEFAULT_PORT);
 });
 
-test('gcrStatus reports not running when no proxy is up', async () => {
-  const s = await gcrStatus({ port: 3458 });
-  assert.equal(s.running, false, 'no GCR proxy should be listening in tests');
+test('gcrStatus reports not running on an unused port', async () => {
+  const s = await gcrStatus({ port: 65530 }); // high port, almost certainly free
+  assert.equal(s.running, false, 'unused port -> not running');
 });
 
 test('gcrStop dry-run returns ok', async () => {
