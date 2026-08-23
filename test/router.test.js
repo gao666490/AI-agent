@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { startCcr, stopCcr, statusCcr, ccrNodeOk, isCcrInstalled, routerStateFile, writeGcrEnv, gcrStart, gcrStatus, gcrStop, GCR_DEFAULT_PORT } from '../src/router.js';
+import { startCcr, stopCcr, statusCcr, ccrNodeOk, isCcrInstalled, routerStateFile, writeGcrEnv, gcrStart, gcrStatus, gcrStop, gcrLaunchCommand, GCR_DEFAULT_PORT } from '../src/router.js';
 
 const tmpHome = await fs.mkdtemp(path.join(os.tmpdir(), 'ag-router-'));
 process.env.AGENT_GUIDE_HOME = tmpHome;
@@ -87,4 +87,15 @@ test('gcrStop dry-run returns ok', async () => {
   const r = await gcrStop({ port: 3458, dryRun: true });
   assert.equal(r.ok, true);
   assert.equal(r.running, false);
+});
+
+test('gcrLaunchCommand avoids the bash shim on win32 (node + .cjs)', () => {
+  const { cmd, args } = gcrLaunchCommand();
+  assert.ok(cmd, 'launcher resolves a command');
+  if (process.platform === 'win32') {
+    assert.ok(args.length > 0, 'win32 passes the cjs launcher path as arg');
+    assert.ok(args[0].includes('start-gemini-proxy.cjs'), `win32 uses the .cjs launcher (got ${args[0]})`);
+  } else {
+    assert.equal(cmd, 'start-gemini-proxy');
+  }
 });

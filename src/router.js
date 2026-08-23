@@ -84,6 +84,22 @@ export async function gcrHealthy(port = GCR_DEFAULT_PORT) {
  * `start-gemini-proxy` detached → poll /health. dryRun skips everything
  * except writing the config (tests).
  */
+/**
+ * Resolve the GCR proxy launch command.
+ * The package's `start-gemini-proxy` bin is a bash script — npm's Windows
+ * shim tries /bin/bash.exe and fails. The package ships a Windows-friendly
+ * `start-gemini-proxy.cjs`; run it via node on win32, the bin elsewhere.
+ */
+export function gcrLaunchCommand() {
+  if (process.platform === 'win32') {
+    const { stdout } = spawnSync('npm', ['root', '-g'], { windowsHide: true, encoding: 'utf8' });
+    const root = (stdout || '').trim();
+    const cjs = path.join(root, 'gemini-cli-router', 'bundle', 'start-gemini-proxy.cjs');
+    return { cmd: process.execPath, args: [cjs] };
+  }
+  return { cmd: 'start-gemini-proxy', args: [] };
+}
+
 export async function gcrStart({ port = GCR_DEFAULT_PORT, provider = 'deepseek', baseUrl, model, apiKey, dryRun = false, log = () => {} } = {}) {
   const envFile = await writeGcrEnv({ provider, baseUrl, model, apiKey, port, homeOverride: process.env.AGENT_GUIDE_HOME || null });
   if (dryRun) {
@@ -93,8 +109,9 @@ export async function gcrStart({ port = GCR_DEFAULT_PORT, provider = 'deepseek',
     const installed = await installGcr(log);
     if (!installed.ok) return { ok: false, error: `gemini-cli-router install failed: ${installed.error}` };
   }
-  log(`start-gemini-proxy (port ${port})`);
-  const child = spawn('start-gemini-proxy', [], { detached: true, stdio: 'ignore', windowsHide: true });
+  const { cmd, args } = gcrLaunchCommand();
+  log(`${cmd} ${args.join(' ')} (port ${port})`);
+  const child = spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true });
   child.unref();
   let ready = false;
   for (let i = 0; i < 20; i++) {
