@@ -251,14 +251,14 @@ export async function installCcr(log = () => {}) {
  * poll the port (management UI) and read gateway.config.json for the gateway
  * port when available. `dryRun` skips the actual spawn (tests/CI).
  */
-export async function startCcr({ port, binOverride = null, dryRun = false, log = () => {} } = {}) {
+export async function startCcr({ port, binOverride = null, dryRun = false, skipInstall = false, log = () => {} } = {}) {
   const state = await readRouterState();
   const chosen = port || 3458;
   if (dryRun) {
     await writeRouterState({ ...state, installed: true, running: true, port: chosen, gatewayPort: chosen + 1 });
     return { ok: true, dryRun: true, port: chosen, gatewayPort: chosen + 1, managementUrl: `http://127.0.0.1:${chosen}` };
   }
-  if (!(await isCcrInstalled(binOverride))) {
+  if (!skipInstall && !(await isCcrInstalled(binOverride))) {
     const installed = await installCcr(log);
     if (!installed.ok) return { ok: false, error: `ccr install failed: ${installed.error}` };
   }
@@ -266,18 +266,31 @@ export async function startCcr({ port, binOverride = null, dryRun = false, log =
 
   const cmd = ccrCmd(binOverride);
   log(`ccr start --host 127.0.0.1 --port ${chosen} --no-open`);
-  const child = spawn(cmd, ['start', '--host', '127.0.0.1', '--port', String(chosen), '--no-open'], {
-    detached: true,
-    stdio: 'ignore',
-    windowsHide: true,
-  });
+  let child;
+  try {
+    child = spawn(cmd, ['start', '--host', '127.0.0.1', '--port', String(chosen), '--no-open'], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+  } catch (err) {
+    await writeRouterState({ ...state, running: false, port: chosen });
+    return { ok: false, error: `ccr spawn failed: ${err?.message || err}` };
+  }
+  let spawnFailed = null;
+  child.on('error', (err) => { spawnFailed = err?.message || String(err); });
   child.unref();
 
   // Poll the management port until it answers (or timeout).
   let ready = false;
   for (let i = 0; i < 20; i++) {
     await new Promise((r) => setTimeout(r, 500));
+    if (spawnFailed) break;
     if (await isPortOpen(chosen)) { ready = true; break; }
+  }
+  if (spawnFailed) {
+    await writeRouterState({ ...state, running: false, port: chosen });
+    return { ok: false, error: `ccr spawn failed: ${spawnFailed}` };
   }
   const gatewayPort = await discoverGatewayPort();
   await writeRouterState({ ...state, installed: true, running: ready, port: chosen, gatewayPort });

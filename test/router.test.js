@@ -44,14 +44,12 @@ test('stopCcr dry-run stops and clears the port', async () => {
   assert.equal(s.running, false);
 });
 
-test('startCcr without dryRun and no ccr on PATH fails cleanly (no silent npm install in tests)', async () => {
-  // Use a bin that does not exist so the install path is hit; guard: this test
-  // only asserts the function returns an error object (npm install would be
-  // attempted against the real registry — acceptable in this sandbox, but we
-  // assert the error shape rather than a successful install).
-  const r = await startCcr({ port: 3459, binOverride: 'definitely-not-a-real-bin-xyz' });
+test('startCcr without dryRun and an unusable bin fails cleanly (no silent npm install in tests)', async () => {
+  // skipInstall avoids a real `npm i -g` during tests; the fake bin then
+  // makes the spawn fail and the error must surface.
+  const r = await startCcr({ port: 3459, binOverride: 'definitely-not-a-real-bin-xyz', skipInstall: true });
   assert.equal(r.ok, false);
-  assert.ok(r.error, 'install failure surfaces an error message');
+  assert.ok(r.error, 'spawn failure surfaces an error message');
 });
 
 // ---- GCR (gemini-cli-router) ----
