@@ -474,7 +474,14 @@ async function selectAgent(id) {
 async function goto(step) {
   const data = await api('/api/state', {
     method: 'POST',
-    body: JSON.stringify({ step, agentId: state.agentId, platform: state.platform, mode: state.mode, workDir: state.workDir }),
+    body: JSON.stringify({
+      step,
+      agentId: state.agentId,
+      platform: state.platform,
+      mode: state.mode,
+      workDir: state.workDir,
+      modelId: state.modelId, // persist the chosen model (was lost before)
+    }),
   });
   Object.assign(state, data.state);
   state.server = state.server || {};
