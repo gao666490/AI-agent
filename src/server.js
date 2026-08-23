@@ -435,7 +435,13 @@ async function writeConfig(req, res, ctx) {
         log: (line) => ctx.log?.(line),
       });
       ctx.log?.(`gemini × ${model.id} -> GCR ${gcr.ok ? 'started' : 'failed'}`);
-      return send(res, gcr.ok ? 200 : 500, {
+      if (!gcr.ok) {
+        return send(res, 500, {
+          error: gcr.error || 'router-start-failed',
+          detail: 'GCR 代理启动失败，请在向导日志或 ~/.agent-guide/logs/guide.log 中查看具体原因',
+        });
+      }
+      return send(res, 200, {
         result: {
           status: 'ok',
           router: 'gcr',

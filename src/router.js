@@ -51,17 +51,44 @@ export async function writeGcrEnv({ provider = 'deepseek', baseUrl, model, apiKe
   return { file };
 }
 
-/** Is the GCR package installed globally? */
+/**
+ * Run npm through the shell on Windows (npm is a .cmd shim; spawnSync('npm')
+ * fails with EINVAL inside a node process, same trap as detect.js).
+ */
+function npmSync(args, timeout = 300000) {
+  if (process.platform === 'win32') {
+    return spawnSync('cmd.exe', ['/d', '/s', '/c', `npm ${args.join(' ')}`], {
+      windowsHide: true, timeout, encoding: 'utf8',
+    });
+  }
+  return spawnSync('npm', args, { windowsHide: true, timeout, encoding: 'utf8' });
+}
+
+export function globalNpmRoot() {
+  const r = npmSync(['root', '-g'], 15000);
+  return (r.stdout || '').trim() || null;
+}
+
+/** Is the GCR package installed globally? (file check — no npm invocation) */
+export function gcrPackagePath() {
+  const root = globalNpmRoot();
+  return root ? path.join(root, GCR_PKG) : null;
+}
+
 export async function isGcrInstalled() {
-  const r = spawnSync('npm', ['ls', '-g', GCR_PKG, '--depth=0'], { windowsHide: true, timeout: 15000, encoding: 'utf8' });
-  return r.status === 0;
+  const pkg = gcrPackagePath();
+  if (!pkg) return false;
+  try {
+    await fs.access(pkg);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function installGcr(log = () => {}) {
   log(`npm install -g ${GCR_PKG}@${GCR_VERSION}`);
-  const r = spawnSync('npm', ['install', '-g', `${GCR_PKG}@${GCR_VERSION}`], {
-    windowsHide: true, timeout: 300000, encoding: 'utf8',
-  });
+  const r = npmSync(['install', '-g', `${GCR_PKG}@${GCR_VERSION}`]);
   if (r.status !== 0) return { ok: false, error: r.stderr?.slice(0, 500) || `npm exit ${r.status}` };
   return { ok: true };
 }
@@ -96,10 +123,11 @@ export async function gcrHealthy(port = GCR_DEFAULT_PORT) {
  */
 export function gcrLaunchCommand() {
   if (process.platform === 'win32') {
-    const { stdout } = spawnSync('npm', ['root', '-g'], { windowsHide: true, encoding: 'utf8' });
-    const root = (stdout || '').trim();
-    const cjs = path.join(root, 'gemini-cli-router', 'bundle', 'start-gemini-proxy.cjs');
-    return { cmd: process.execPath, args: [cjs] };
+    const root = globalNpmRoot();
+    const cjs = root ? path.join(root, 'gemini-cli-router', 'bundle', 'start-gemini-proxy.cjs') : null;
+    if (cjs) return { cmd: process.execPath, args: [cjs] };
+    // fall back to the shim (may fail on bash-less Windows, but try)
+    return { cmd: 'start-gemini-proxy', args: [] };
   }
   return { cmd: 'start-gemini-proxy', args: [] };
 }
@@ -109,11 +137,18 @@ export async function gcrStart({ port = GCR_DEFAULT_PORT, provider = 'deepseek',
   if (dryRun) {
     return { ok: true, dryRun: true, port, envFile: envFile.file };
   }
+  // Reuse a proxy that is already healthy on this port.
+  if (await gcrHealthy(port)) {
+    return { ok: true, running: true, alreadyRunning: true, port, envFile: envFile.file };
+  }
   if (!(await isGcrInstalled())) {
     const installed = await installGcr(log);
     if (!installed.ok) return { ok: false, error: `gemini-cli-router install failed: ${installed.error}` };
   }
   const { cmd, args } = gcrLaunchCommand();
+  if (!cmd || (process.platform === 'win32' && !args.length)) {
+    return { ok: false, error: '无法定位 GCR 启动器（npm 全局目录未找到 gemini-cli-router）' };
+  }
   log(`${cmd} ${args.join(' ')} (port ${port})`);
   const child = spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true });
   child.unref();
@@ -122,7 +157,10 @@ export async function gcrStart({ port = GCR_DEFAULT_PORT, provider = 'deepseek',
     await new Promise((r) => setTimeout(r, 500));
     if (await gcrHealthy(port)) { ready = true; break; }
   }
-  return { ok: ready, running: ready, port, envFile: envFile.file };
+  if (!ready) {
+    return { ok: false, error: `GCR 代理启动后 10 秒内未通过健康检查 (http://localhost:${port}/health)。请确认 3458 端口空闲后重试。` };
+  }
+  return { ok: true, running: true, port, envFile: envFile.file };
 }
 
 /** Stop the GCR proxy by killing the process listening on its port. */
@@ -199,11 +237,7 @@ export async function isCcrInstalled(binOverride = null) {
 /** Install CCR globally via npm (pinned version, per design §8 supply chain). */
 export async function installCcr(log = () => {}) {
   log(`npm install -g ${CCR_PKG}@${CCR_VERSION}`);
-  const r = spawnSync('npm', ['install', '-g', `${CCR_PKG}@${CCR_VERSION}`], {
-    windowsHide: true,
-    timeout: 300000,
-    encoding: 'utf8',
-  });
+  const r = npmSync(['install', '-g', `${CCR_PKG}@${CCR_VERSION}`]);
   if (r.status !== 0) {
     return { ok: false, error: r.stderr?.slice(0, 500) || `npm exit ${r.status}` };
   }
