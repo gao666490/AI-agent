@@ -126,9 +126,9 @@ test('gcr router start dry-run (gemini → deepseek)', async () => {
   const body = await start.json();
   assert.equal(body.ok, true);
   assert.equal(body.dryRun, true);
-  const status = await post('/api/router/status', JSON.stringify({ router: 'gcr' }));
+  const status = await post('/api/router/status', JSON.stringify({ router: 'gcr', port: 65530 }));
   const st = await status.json();
-  assert.equal(st.running, false, 'no real GCR proxy in tests');
+  assert.equal(st.running, false, 'unused port -> not running');
 });
 
 test('/api/config rejects incompatible combos before writing', async () => {
