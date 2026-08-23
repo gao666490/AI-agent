@@ -418,7 +418,36 @@ async function writeConfig(req, res, ctx) {
     return send(res, 400, { error: 'incompatible', reason: `${agent.id} does not support ${model.id}` });
   }
   if (compat === 'router') {
-    return send(res, 501, { error: 'router-integration-lands-in-M4', hint: '该组合需要 claude-code-router（M4）' });
+    // M4: gemini × CN providers route through gemini-cli-router (GCR);
+    // claude-code × CN providers still need the CCR UI workflow (next).
+    if (agent.id === 'gemini') {
+      const apiKey = body.apiKey;
+      if (!apiKey) return send(res, 400, { error: 'api-key-required' });
+      const baseUrl = body.baseUrl || model.api?.openaiCompatible;
+      if (!baseUrl) return send(res, 400, { error: 'no-endpoint' });
+      ctx.secrets = [...(ctx.secrets || []), apiKey];
+      const gcr = await gcrStart({
+        provider: 'deepseek',
+        baseUrl,
+        model: body.modelName || model.models?.[0] || model.id,
+        apiKey,
+        dryRun: body.dryRun === true,
+        log: (line) => ctx.log?.(line),
+      });
+      ctx.log?.(`gemini × ${model.id} -> GCR ${gcr.ok ? 'started' : 'failed'}`);
+      return send(res, gcr.ok ? 200 : 500, {
+        result: {
+          status: 'ok',
+          router: 'gcr',
+          ...gcr,
+          notes: [
+            'Gemini CLI 通过 gemini-cli-router 代理转发到国内模型。',
+            '启动 Agent 请使用 GCR 改版命令：gemini-local（官方 gemini 命令不会走代理）。',
+          ],
+        },
+      });
+    }
+    return send(res, 501, { error: 'router-integration-lands-in-M4', hint: 'Claude Code 的 router 配置注入需在 CCR 管理 UI 完成（真机闭环）' });
   }
   if (agent.id === 'claude-code' && compat !== 'anthropic-compatible') {
     return send(res, 501, { error: 'router-integration-lands-in-M4', hint: 'Claude Code 接入 OpenAI 兼容端点需要 router（M4）' });

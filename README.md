@@ -157,7 +157,7 @@ test/                 node:test 单测
 | M1 骨架 | CLI + 本地服务 + 浏览器 UI + i18n + 环境检测 + state 持久化 | ✅ |
 | M2 安装引擎 | 分步确认执行器（SSE 日志）+ 前置依赖（含自动安装）+ 7 Agent 配方核验 | ✅ |
 | M3 模型接入 | 国内 10 家端点核验 + 模型/Key 页 + 配置写入器 + doctor | ✅ |
-| M4 Router 与 WSL | claude-code-router 集成（豆包/MiniMax/讯飞 → Claude Code）+ WSL 流程深化 | ⏳ |
+| M4 Router 与 WSL | gemini-cli-router 集成（**gemini → 国内模型全链路** ✅）+ claude-code-router 生命周期（配置注入待真机闭环） | 🚧 进行中 |
 | M5 打磨与发布 | npm 发布（npx agent-guide@latest）、验收清单 | ⏳ |
 
 ---

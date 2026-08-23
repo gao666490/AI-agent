@@ -4,7 +4,7 @@ import os from 'node:os';
 import { detect, run } from './detect.js';
 import { loadAgents } from './agents.js';
 import { loadDict, t } from './i18n.js';
-import { statusCcr, ccrNodeOk } from './router.js';
+import { statusCcr, ccrNodeOk, gcrStatus } from './router.js';
 
 /** Config files written by the M3 config writer (per agent kind). */
 const CONFIG_PATHS = {
@@ -67,6 +67,14 @@ export async function printDoctor() {
     console.log(`  management: ${router.managementUrl || '(unknown port)'}`);
     console.log(`  gateway:    ${router.gatewayPort ? `127.0.0.1:${router.gatewayPort}` : '(check CCR UI / gateway.config.json)'}`);
   }
+
+  console.log('');
+  console.log('Gemini CLI Router (GCR):');
+  const gcr = await gcrStatus();
+  console.log(`  installed: ${gcr.installed ? '✓' : '— not installed'}`);
+  console.log(`  running:   ${gcr.running ? '✓' : '— stopped'}`);
+  console.log(`  health:    ${gcr.healthUrl}`);
+  console.log(`  launch:    ${gcr.running ? 'gemini-local' : '(start via the wizard, or run the .cjs launcher directly)'}`);
 }
 
 function parseNode(v) {

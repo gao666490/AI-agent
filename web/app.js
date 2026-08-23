@@ -204,8 +204,9 @@ viewRenderers.model = async () => {
 };
 
 viewRenderers.apikey = async () => {
-  // Gemini CLI authenticates with a Google account — no API key flow.
-  if (state.agentId === 'gemini') {
+  // Google Gemini model → Google account login (no API key).
+  // CN providers → normal API key flow; the server routes through GCR.
+  if (state.agentId === 'gemini' && (!state.modelId || state.modelId === 'google')) {
     return `
     <div class="card">
       <h2 data-i18n="gemini.title">${t('gemini.title')}</h2>
@@ -262,11 +263,13 @@ viewRenderers.placeholder = () => `
 
 viewRenderers.finish = () => {
   const agent = (state.agentsList || []).find((a) => a.id === state.agentId);
+  const launch = state.lastRouter === 'gcr' ? 'gemini-local' : (agent?.launchCommand || state.agentId);
+  const routerHint = state.lastRouter === 'gcr' ? `<div class="notice" style="margin-top:8px">${t('finish.gcrHint')}</div>` : '';
   return `
   <div class="card">
     <h2 data-i18n="finish.title">${t('finish.title')}</h2>
     <p class="subtitle" data-i18n="finish.subtitle">${t('finish.subtitle')}</p>
-    <p><label data-i18n="finish.launch">${t('finish.launch')}</label><div class="code-block">$ ${esc(agent?.launchCommand || state.agentId)}</div></p>
+    <p><label data-i18n="finish.launch">${t('finish.launch')}</label><div class="code-block">$ ${esc(launch)}</div>${routerHint}</p>
     <p><label data-i18n="finish.configWritten">${t('finish.configWritten')}</label><div class="code-block">${esc((state.lastConfigFiles || []).join('\n') || '—')}</div></p>
     <p><label data-i18n="finish.doctor">${t('finish.doctor')}</label><div class="code-block">$ agent-guide doctor</div></p>
     <div class="actions"><button class="btn" data-goto="apikey" data-i18n="common.back">${t('common.back')}</button></div>
@@ -570,6 +573,8 @@ function bindActions() {
           body: JSON.stringify({ agentId: state.agentId, modelId: state.modelId, apiKey: key }),
         });
         state.lastConfigFiles = r.result?.files || [];
+        state.lastRouter = r.result?.router || null;
+        if (r.result?.notes?.length) state.lastRouterNotes = r.result.notes;
         statusEl.innerHTML = `<span class="badge ok">${t('apikey.written')}</span>`;
         await goto('finish');
       } catch (err) {

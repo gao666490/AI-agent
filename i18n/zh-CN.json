@@ -115,10 +115,12 @@
   "model.compat.unsupported": "不支持",
   "model.select": "选择",
 
-  "gemini.notice": "Gemini CLI 使用 Google 账号登录，仅支持 Google Gemini 模型（无需 API Key）；其他模型不可选。",
+  "gemini.notice": "Gemini CLI 接 Google Gemini 用账号登录；接国内模型通过 gemini-cli-router（GCR）代理转发，向导会自动安装配置代理。",
   "gemini.title": "Google 账号登录",
   "gemini.body": "Gemini CLI 通过 Google 账号鉴权，不需要 API Key。请在本机终端运行下面的命令完成登录（会打开浏览器授权）：",
   "gemini.after": "登录完成后即可使用 gemini 命令启动 Agent。",
+
+  "finish.gcrHint": "已配置 GCR 代理：请用 gemini-local 命令启动（官方 gemini 命令不会走国内模型代理）。",
 
   "apikey.title": "API Key",
   "apikey.subtitle": "Key 只写入本机 Agent 配置（权限收紧），不进入向导状态文件与日志；可先验证再写入，也可稍后配置。",

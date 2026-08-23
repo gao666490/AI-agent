@@ -131,12 +131,22 @@ test('gcr router start dry-run (gemini → deepseek)', async () => {
   assert.equal(st.running, false, 'unused port -> not running');
 });
 
-test('/api/config rejects incompatible combos before writing', async () => {
+test('/api/config routes gemini × CN provider through GCR (dry-run)', async () => {
   await post('/api/state', JSON.stringify({ agentId: 'gemini', platform: 'windows' }));
-  const res = await post('/api/config', JSON.stringify({ modelId: 'deepseek', apiKey: 'sk-x', skipVerify: true }));
+  const res = await post('/api/config', JSON.stringify({ modelId: 'deepseek', apiKey: 'sk-x', dryRun: true }));
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.result.router, 'gcr');
+  assert.equal(body.result.dryRun, true);
+  assert.ok(body.result.notes?.length, 'GCR notes explain gemini-local');
+});
+
+test('/api/config rejects truly incompatible combos', async () => {
+  await post('/api/state', JSON.stringify({ agentId: 'gemini', platform: 'windows' }));
+  const res = await post('/api/config', JSON.stringify({ modelId: 'anthropic', apiKey: 'sk-x', skipVerify: true }));
   assert.equal(res.status, 400);
   const body = await res.json();
-  assert.equal(body.error, 'incompatible', 'gemini × deepseek must be rejected by the compat matrix');
+  assert.equal(body.error, 'incompatible', 'gemini × anthropic stays incompatible');
 });
 
 test('prereq install: admin-tier requirement is refused with the command', async () => {
