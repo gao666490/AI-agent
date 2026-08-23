@@ -66,17 +66,21 @@ async function installGcr(log = () => {}) {
   return { ok: true };
 }
 
-/** Probe the GCR proxy health endpoint. */
+/**
+ * Probe the GCR proxy health endpoint. GCR's proxy binds ::1 (IPv6 loopback)
+ * on some platforms, so probe both 127.0.0.1 and [::1].
+ */
 export async function gcrHealthy(port = GCR_DEFAULT_PORT) {
-  try {
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 1500);
-    const res = await fetch(`http://127.0.0.1:${port}/health`, { signal: controller.signal });
-    clearTimeout(t);
-    return res.ok;
-  } catch {
-    return false;
+  for (const host of ['127.0.0.1', '[::1]']) {
+    try {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 1500);
+      const res = await fetch(`http://${host}:${port}/health`, { signal: controller.signal });
+      clearTimeout(t);
+      if (res.ok) return true;
+    } catch { /* try next address */ }
   }
+  return false;
 }
 
 /**
