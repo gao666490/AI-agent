@@ -118,6 +118,19 @@ test('/api/keys/verify rejects missing fields', async () => {
   assert.equal((await res.json()).error, 'baseUrl-and-apiKey-required');
 });
 
+test('gcr router start dry-run (gemini → deepseek)', async () => {
+  const start = await post('/api/router/start', JSON.stringify({
+    router: 'gcr', dryRun: true, modelId: 'deepseek', apiKey: 'sk-test-xyz',
+  }));
+  assert.equal(start.status, 200);
+  const body = await start.json();
+  assert.equal(body.ok, true);
+  assert.equal(body.dryRun, true);
+  const status = await post('/api/router/status', JSON.stringify({ router: 'gcr' }));
+  const st = await status.json();
+  assert.equal(st.running, false, 'no real GCR proxy in tests');
+});
+
 test('/api/config rejects incompatible combos before writing', async () => {
   await post('/api/state', JSON.stringify({ agentId: 'gemini', platform: 'windows' }));
   const res = await post('/api/config', JSON.stringify({ modelId: 'deepseek', apiKey: 'sk-x', skipVerify: true }));

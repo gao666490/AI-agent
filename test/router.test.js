@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { startCcr, stopCcr, statusCcr, ccrNodeOk, isCcrInstalled, routerStateFile } from '../src/router.js';
+import { startCcr, stopCcr, statusCcr, ccrNodeOk, isCcrInstalled, routerStateFile, writeGcrEnv, gcrStart, gcrStatus, gcrStop, GCR_DEFAULT_PORT } from '../src/router.js';
 
 const tmpHome = await fs.mkdtemp(path.join(os.tmpdir(), 'ag-router-'));
 process.env.AGENT_GUIDE_HOME = tmpHome;
@@ -52,4 +52,39 @@ test('startCcr without dryRun and no ccr on PATH fails cleanly (no silent npm in
   const r = await startCcr({ port: 3459, binOverride: 'definitely-not-a-real-bin-xyz' });
   assert.equal(r.ok, false);
   assert.ok(r.error, 'install failure surfaces an error message');
+});
+
+// ---- GCR (gemini-cli-router) ----
+
+test('writeGcrEnv writes the provider config', async () => {
+  const r = await writeGcrEnv({
+    provider: 'deepseek', baseUrl: 'https://api.deepseek.com',
+    model: 'deepseek-v4-flash', apiKey: 'sk-gcr-test-123', port: 3458,
+    homeOverride: tmpHome,
+  });
+  const env = await fs.readFile(path.join(tmpHome, '.gemini-cli-router', '.env'), 'utf8');
+  assert.ok(env.includes('GCR_PROVIDER=deepseek'));
+  assert.ok(env.includes('GCR_BASE_URL=https://api.deepseek.com'));
+  assert.ok(env.includes('GCR_TARGET_API_KEY=sk-gcr-test-123'));
+  assert.ok(env.includes('GCR_MODEL=deepseek-v4-flash'));
+  assert.ok(env.includes('GCR_PORT=3458'));
+  assert.ok(r.file.endsWith('.env'));
+});
+
+test('gcrStart dry-run writes env and reports ok without spawning', async () => {
+  const r = await gcrStart({ port: 3458, baseUrl: 'https://api.deepseek.com', model: 'deepseek-v4-flash', apiKey: 'sk-x', dryRun: true });
+  assert.equal(r.ok, true);
+  assert.equal(r.dryRun, true);
+  assert.equal(r.port, GCR_DEFAULT_PORT);
+});
+
+test('gcrStatus reports not running when no proxy is up', async () => {
+  const s = await gcrStatus({ port: 3458 });
+  assert.equal(s.running, false, 'no GCR proxy should be listening in tests');
+});
+
+test('gcrStop dry-run returns ok', async () => {
+  const r = await gcrStop({ port: 3458, dryRun: true });
+  assert.equal(r.ok, true);
+  assert.equal(r.running, false);
 });

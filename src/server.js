@@ -13,7 +13,7 @@ import { runCommand } from './exec.js';
 import { checkPrereqs } from './prereqs.js';
 import { writeProviderConfig } from './config-writer.js';
 import { verifyKey } from './verify.js';
-import { startCcr, stopCcr, statusCcr } from './router.js';
+import { startCcr, stopCcr, statusCcr, gcrStart, gcrStop, gcrStatus, GCR_DEFAULT_PORT } from './router.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const webDir = path.join(here, '..', 'web');
 const i18nDir = path.join(here, '..', 'i18n');
@@ -211,8 +211,27 @@ async function routeApi(req, res, pathname, url, ctx) {
   const routerMatch = pathname.match(/^\/api\/router\/(start|stop|status)$/);
   if (routerMatch && method === 'POST') {
     const action = routerMatch[1];
+    const body = await readBody(req).catch(() => ({}));
+    const which = body.router === 'gcr' ? 'gcr' : 'ccr';
     if (action === 'start') {
-      const body = await readBody(req).catch(() => ({}));
+      if (which === 'gcr') {
+        // GCR needs the target provider details from the chosen model.
+        const models = await loadModels();
+        const model = models.find((m) => m.id === body.modelId);
+        if (!model) return send(res, 400, { error: 'unknown-model' });
+        if (!body.apiKey) return send(res, 400, { error: 'api-key-required' });
+        const result = await gcrStart({
+          port: body.port || GCR_DEFAULT_PORT,
+          provider: 'deepseek',
+          baseUrl: model.api?.openaiCompatible,
+          model: (body.modelName || model.models?.[0] || model.id),
+          apiKey: body.apiKey,
+          dryRun: body.dryRun === true,
+          log: (line) => ctx.log?.(line),
+        });
+        if (result.ok && !result.dryRun) ctx.secrets = [...(ctx.secrets || []), body.apiKey];
+        return send(res, result.ok ? 200 : 500, result);
+      }
       const result = await startCcr({
         port: body.port || null,
         binOverride: body.binOverride || null,
@@ -221,19 +240,20 @@ async function routeApi(req, res, pathname, url, ctx) {
       });
       if (result.ok && !result.dryRun && body.modelId && body.apiKey) {
         ctx.secrets = [...(ctx.secrets || []), body.apiKey];
-        // Remember the target provider for the finish page / doctor.
         ctx.routerProvider = { modelId: body.modelId, gatewayPort: result.gatewayPort || result.port };
       }
       return send(res, result.ok ? 200 : 500, result);
     }
     if (action === 'stop') {
-      const body = await readBody(req).catch(() => ({}));
-      const result = await stopCcr({ binOverride: body.binOverride || null, dryRun: body.dryRun === true });
+      const result = which === 'gcr'
+        ? await gcrStop({ port: body.port || GCR_DEFAULT_PORT, dryRun: body.dryRun === true })
+        : await stopCcr({ binOverride: body.binOverride || null, dryRun: body.dryRun === true });
       return send(res, result.ok ? 200 : 500, result);
     }
     if (action === 'status') {
-      const body = await readBody(req).catch(() => ({}));
-      const result = await statusCcr({ binOverride: body.binOverride || null });
+      const result = which === 'gcr'
+        ? await gcrStatus({ port: body.port || GCR_DEFAULT_PORT })
+        : await statusCcr({ binOverride: body.binOverride || null });
       return send(res, 200, result);
     }
   }
