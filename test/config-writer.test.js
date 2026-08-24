@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { writeProviderConfig } from '../src/config-writer.js';
+import { writeProviderConfig, persistUserEnvVars } from '../src/config-writer.js';
 
 const tmpHome = await fs.mkdtemp(path.join(os.tmpdir(), 'ag-config-'));
 const agent = (kind) => ({ id: 'test-agent', config: { kind } });
@@ -57,11 +57,28 @@ test('claude: writes settings.json env block', async () => {
   assert.equal(settings.env.ANTHROPIC_AUTH_TOKEN, 'sk-test-1234567890');
 });
 
-test('hermes: writes .env', async () => {
+test('hermes: writes official env vars (HERMES_MODEL + <PROVIDER>_BASE_URL/_API_KEY)', async () => {
   const r = await writeProviderConfig({ agent: agent('hermes'), ...baseArgs, homeOverride: tmpHome });
   assert.equal(r.status, 'ok');
   const env = await fs.readFile(path.join(tmpHome, '.hermes', '.env'), 'utf8');
-  assert.ok(env.includes('HERMES_API_KEY=sk-test-1234567890'));
+  assert.ok(env.includes('HERMES_MODEL=deepseek-chat'));
+  assert.ok(env.includes('DEEPSEEK_BASE_URL=https://api.deepseek.com/v1'), 'per-provider prefix per official docs');
+  assert.ok(env.includes('DEEPSEEK_API_KEY=sk-test-1234567890'));
+  assert.ok(!env.includes('HERMES_API_KEY='), 'non-official HERMES_API_KEY must not be written');
+});
+
+test('goose: registers custom_providers/<id>.json with api_key_env and surfaces envKey', async () => {
+  const r = await writeProviderConfig({ agent: agent('goose'), ...baseArgs, homeOverride: tmpHome });
+  assert.equal(r.status, 'ok');
+  assert.equal(r.envKey, 'DEEPSEEK_API_KEY', 'key env var name surfaced for persistence');
+  const provider = JSON.parse(await fs.readFile(path.join(tmpHome, '.config', 'goose', 'custom_providers', 'deepseek-chat.json'), 'utf8'));
+  assert.equal(provider.name, 'deepseek-chat');
+  assert.equal(provider.engine, 'openai');
+  assert.equal(provider.api_key_env, 'DEEPSEEK_API_KEY');
+  assert.equal(provider.base_url, 'https://api.deepseek.com/v1');
+  assert.equal(provider.models[0].name, 'deepseek-chat');
+  assert.equal(provider.base_path, 'v1/chat/completions');
+  assert.ok(!JSON.stringify(r).includes('sk-test-1234567890'), 'result must not echo the key');
 });
 
 test('missing key is rejected before writing', async () => {
@@ -70,9 +87,59 @@ test('missing key is rejected before writing', async () => {
   assert.equal(r.error, 'api-key-required');
 });
 
-test('gemini has no writer (google auth) — unsupported', async () => {
+test('gemini (native): writes settings.json apiKey + model + selectedType=gemini-api-key (skips auth chooser)', async () => {
   const r = await writeProviderConfig({ agent: agent('gemini'), ...baseArgs, homeOverride: tmpHome });
-  assert.equal(r.status, 'unsupported');
+  assert.equal(r.status, 'ok');
+  const settings = JSON.parse(await fs.readFile(path.join(tmpHome, '.gemini', 'settings.json'), 'utf8'));
+  assert.equal(settings.apiKey, 'sk-test-1234567890');
+  assert.deepEqual(settings.model, { default: 'deepseek-chat' }, '0.56.0 requires an object model');
+  assert.equal(settings.env.GEMINI_API_KEY, 'sk-test-1234567890', 'env key covers versions that skip settings.apiKey');
+  assert.equal(settings.security.auth.selectedType, 'gemini-api-key', 'auth chooser is disabled');
+});
+
+test('gemini (GCR router): selectedType=gemini-api-key (gateway is invalid in 0.56.0) + env block pointing at the local proxy', async () => {
+  const routerHome = await fs.mkdtemp(path.join(os.tmpdir(), 'ag-config-gcr-'));
+  const r = await writeProviderConfig({
+    agent: agent('gemini'), ...baseArgs,
+    geminiAuthType: 'gateway',
+    geminiEnv: {
+      GEMINI_API_KEY: 'agent-guide',
+      GEMINI_BASE_URL: 'http://127.0.0.1:3458',
+      GOOGLE_GEMINI_BASE_URL: 'http://127.0.0.1:3458',
+    },
+    homeOverride: routerHome,
+  });
+  assert.equal(r.status, 'ok');
+  const settings = JSON.parse(await fs.readFile(path.join(routerHome, '.gemini', 'settings.json'), 'utf8'));
+  assert.equal(settings.env.GEMINI_API_KEY, 'agent-guide');
+  assert.equal(settings.env.GEMINI_BASE_URL, 'http://127.0.0.1:3458');
+  assert.equal(settings.env.GOOGLE_GEMINI_BASE_URL, 'http://127.0.0.1:3458', 'current gemini-cli reads GOOGLE_GEMINI_BASE_URL');
+  assert.equal(settings.apiKey, 'sk-test-1234567890');
+  assert.equal(settings.security.auth.selectedType, 'gemini-api-key', "'gateway' is rejected by gemini-cli 0.56.0 -> mapped to api-key + proxy env");
+  assert.deepEqual(settings.model, { default: 'deepseek-chat' }, 'model pinned for CLI display (proxy still translates)');
+});
+
+test('gemini: existing settings.json is merged, stale oauth selection is overridden', async () => {
+  const file = path.join(tmpHome, '.gemini', 'settings.json');
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.writeFile(file, JSON.stringify({
+    model: 'gemini-2.5-flash',
+    bidi: true,
+    security: { auth: { selectedType: 'oauth-personal' } }, // stale failed Google login
+  }), 'utf8');
+  const r = await writeProviderConfig({ agent: agent('gemini'), ...baseArgs, homeOverride: tmpHome });
+  assert.equal(r.status, 'ok');
+  const settings = JSON.parse(await fs.readFile(file, 'utf8'));
+  assert.equal(settings.apiKey, 'sk-test-1234567890');
+  assert.equal(settings.bidi, true, 'unrelated fields survive the merge');
+  assert.deepEqual(settings.model, { default: 'deepseek-chat' }, 'model is replaced with the chosen one');
+  assert.equal(settings.security.auth.selectedType, 'gemini-api-key', 'stale oauth-personal is replaced');
+});
+
+test('persistUserEnvVars: dry-run lists commands without executing (Windows setx)', async () => {
+  const r = persistUserEnvVars({ GOOGLE_GEMINI_BASE_URL: 'http://127.0.0.1:3458', GEMINI_API_KEY: 'agent-guide' }, { dryRun: true });
+  assert.ok(r.commands.some((c) => c.startsWith('setx GOOGLE_GEMINI_BASE_URL')), 'windows command listed');
+  assert.ok(r.notes.some((n) => n.startsWith('[dry-run]')), 'dry-run note');
 });
 
 test('unknown kind is unsupported', async () => {

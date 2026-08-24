@@ -139,6 +139,49 @@ test('/api/config routes gemini × CN provider through GCR (dry-run)', async () 
   assert.equal(body.result.router, 'gcr');
   assert.equal(body.result.dryRun, true);
   assert.ok(body.result.notes?.length, 'GCR notes explain gemini-local');
+  // ~/.gemini/settings.json is pre-written so plain `gemini` skips the
+  // first-run "Get started" bootstrap and routes through the local proxy.
+  const geminiSettings = path.join(process.env.AGENT_GUIDE_HOME, '.gemini', 'settings.json');
+  assert.ok(body.result.files?.includes(geminiSettings), 'gemini settings.json listed in written files');
+  const settings = JSON.parse(await fs.readFile(geminiSettings, 'utf8'));
+  assert.equal(settings.env.GEMINI_BASE_URL, `http://127.0.0.1:${body.result.port}`, 'proxy base url injected');
+  assert.equal(settings.env.GOOGLE_GEMINI_BASE_URL, `http://127.0.0.1:${body.result.port}`, 'current CLI env var injected');
+  assert.ok(settings.env.GEMINI_API_KEY, 'placeholder api key injected');
+  assert.equal(settings.security.auth.selectedType, 'gemini-api-key', "'gateway' is invalid in gemini-cli 0.56.0 -> api-key + proxy env, chooser never shows");
+  assert.ok(!JSON.stringify(settings).includes('sk-x'), 'real upstream key never lands in settings.json');
+  // env persistence is listed but not executed in dry-run (no setx side effects)
+  assert.ok(body.result.envCommands?.some((c) => c.startsWith('setx GOOGLE_GEMINI_BASE_URL')), 'env commands listed transparently');
+});
+
+test('/api/config writes gemini × Google Gemini api key (skips first-run bootstrap)', async () => {
+  await post('/api/state', JSON.stringify({ agentId: 'gemini', platform: 'windows' }));
+  const res = await post('/api/config', JSON.stringify({ modelId: 'google', apiKey: 'sk-test-google' }));
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.result.status, 'ok');
+  const settings = JSON.parse(await fs.readFile(path.join(process.env.AGENT_GUIDE_HOME, '.gemini', 'settings.json'), 'utf8'));
+  assert.equal(settings.apiKey, 'sk-test-google');
+  assert.ok(settings.model, 'default gemini model pinned');
+  assert.equal(settings.env.GEMINI_API_KEY, 'sk-test-google', 'key also in env for cross-version resolution');
+  assert.equal(settings.security.auth.selectedType, 'gemini-api-key', 'api-key auth selected -> no chooser');
+});
+
+test('/api/config writes goose custom provider + persists api key env var (dry-run)', async () => {
+  await post('/api/state', JSON.stringify({ agentId: 'goose', platform: 'windows' }));
+  const res = await post('/api/config', JSON.stringify({
+    modelId: 'deepseek', modelName: 'deepseek-v4-flash', apiKey: 'sk-x',
+    skipVerify: true, dryRun: true,
+  }));
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.result.status, 'ok');
+  const providerFile = path.join(process.env.AGENT_GUIDE_HOME, '.config', 'goose', 'custom_providers', 'deepseek.json');
+  assert.ok(body.result.files?.includes(providerFile), 'goose provider json listed in written files');
+  assert.ok(body.result.envCommands?.some((c) => c.startsWith('setx DEEPSEEK_API_KEY')), 'key env var listed for persistence (no setx in dry-run)');
+  const provider = JSON.parse(await fs.readFile(providerFile, 'utf8'));
+  assert.equal(provider.engine, 'openai');
+  assert.equal(provider.api_key_env, 'DEEPSEEK_API_KEY');
+  assert.equal(provider.models[0].name, 'deepseek-v4-flash');
 });
 
 test('/api/config rejects truly incompatible combos', async () => {

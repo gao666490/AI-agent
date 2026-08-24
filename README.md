@@ -69,7 +69,7 @@ node bin/agent-guide.js --no-open  # 不自动打开浏览器
 | 7 | 安装执行 | 逐步骤「确认 → 执行」，右侧**实时流式日志**（密钥脱敏、超时自动终止） |
 | 8 | 模型系列 | 国内优先；每个模型标注兼容方式（原生 / 厂商 Anthropic 兼容 / OpenAI 兼容 / 需 router / 不支持） |
 | 9 | API Key | 输入 + 二次确认 → **在线验证** → 写入配置（或「稍后配置」） |
-| 10 | 配置写入 | 自动写 `~/.claude/settings.json`、`~/.codex/config.toml`、`~/.aider.conf.yml`、`~/.config/opencode/config.json`、`~/.hermes/.env` |
+| 10 | 配置写入 | 自动写 `~/.claude/settings.json`、`~/.codex/config.toml`、`~/.aider.conf.yml`、`~/.config/opencode/config.json`、`~/.hermes/.env`、`~/.gemini/settings.json`（Gemini 预写 Key/代理 env，首次运行跳过 Get started 登录引导） |
 | 11 | 完成 | 启动命令、写入的文件清单、`agent-guide doctor` 自检 |
 
 状态存在 `~/.agent-guide/state.json`，**中途退出后重新启动会自动回到上次步骤**（WSL 安装触发重启的场景也能恢复）。
@@ -85,10 +85,11 @@ node bin/agent-guide.js --no-open  # 不自动打开浏览器
 | Claude Code | **WSL2**（官方推荐） | 原生 | `claude` |
 | Codex CLI | 原生（**CLI 与桌面版共用配置**） | 原生 | `codex` |
 | Hermes Agent | **原生**（官方支持，无需 WSL） | 原生 | `hermes` |
-| Gemini CLI | 原生 (npm) | 原生 | `gemini` |
-| Aider | 原生 (uv tool) | 原生 | `aider` |
+| Gemini CLI | 原生 (npm) | 原生 | `gemini` || Aider | 原生 (uv tool) | 原生 | `aider` |
 | OpenCode | **WSL**（原生为实验性） | 原生 (npm) | `opencode` |
 | Goose | 原生（PowerShell 官方脚本 / npm） | brew cask `block-goose` / 官方脚本 | `goose` |
+
+> 💡 **Gemini CLI 首次引导**：向导在配置环节预写 `~/.gemini/settings.json` 的 `security.auth.selectedType`（Gemini CLI 只有该字段未设置时才弹 "How would you like to authenticate" 选择器）——选 Google Gemini 时写 `gemini-api-key` + API Key；选国内模型时同样写 `gemini-api-key` + 占位 Key（**gemini-cli 0.56.0 的 `validateAuthMethod` 不接受 `gateway` 值**），并写指向本地 GCR 代理的 env（`GEMINI_API_KEY` / `GOOGLE_GEMINI_BASE_URL`），同时把 baseUrl 持久化到用户环境变量（Windows `setx` / Unix shell profile）。之后运行 `gemini` 直接可用，不再弹登录引导。
 
 ### 国内模型（10，端点已核验）
 

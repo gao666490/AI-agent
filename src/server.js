@@ -11,7 +11,7 @@ import { tailLog } from './log.js';
 import { recipePlatform } from './detect.js';
 import { runCommand } from './exec.js';
 import { checkPrereqs } from './prereqs.js';
-import { writeProviderConfig } from './config-writer.js';
+import { writeProviderConfig, persistUserEnvVars } from './config-writer.js';
 import { verifyKey } from './verify.js';
 import { startCcr, stopCcr, statusCcr, gcrStart, gcrStop, gcrStatus, GCR_DEFAULT_PORT } from './router.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -441,15 +441,46 @@ async function writeConfig(req, res, ctx) {
           detail: 'GCR 代理启动失败，请在向导日志或 ~/.agent-guide/logs/guide.log 中查看具体原因',
         });
       }
+      // 预写 ~/.gemini/settings.json：selectedType=gemini-api-key（占位 Key，不再弹
+      // "How would you like to authenticate" 引导；gemini-cli 0.56.0 的
+      // validateAuthMethod 不接受 'gateway' 值）+ GOOGLE_GEMINI_BASE_URL 指向本地代理。
+      // 当前版本 gemini-cli 的 baseUrl 只读进程环境变量 GOOGLE_GEMINI_BASE_URL
+      // （settings.env 不会注入 process.env），所以这里同步把环境变量持久化到用户级
+      // （setx / shell profile）。
+      const proxyUrl = `http://127.0.0.1:${gcr.port || GCR_DEFAULT_PORT}`;
+      const dryRun = body.dryRun === true;
+      const geminiCfg = await writeProviderConfig({
+        agent,
+        modelId: model.id,
+        modelName: body.modelName || model.models?.[0] || model.id,
+        apiKey: 'agent-guide', // 占位符：代理不校验 token
+        baseUrl: null,
+        geminiAuthType: 'gemini-api-key',
+        geminiEnv: {
+          GEMINI_API_KEY: 'agent-guide',
+          GEMINI_BASE_URL: proxyUrl,          // 旧版本 gemini-cli 的变量名
+          GOOGLE_GEMINI_BASE_URL: proxyUrl,   // 当前版本 gemini-cli 的变量名
+        },
+        homeOverride: process.env.AGENT_GUIDE_HOME || null,
+      });
+      const envPersist = persistUserEnvVars(
+        { GOOGLE_GEMINI_BASE_URL: proxyUrl, GEMINI_API_KEY: 'agent-guide' },
+        { dryRun, homeOverride: process.env.AGENT_GUIDE_HOME || null },
+      );
+      const gcrNotes = [
+        'Gemini CLI 通过 gemini-cli-router 代理转发到国内模型，已写入 selectedType=gemini-api-key（占位 Key）+ GOOGLE_GEMINI_BASE_URL 指向本地代理，不再弹登录引导（gemini-cli 0.56.0 不接受 gateway 值）。',
+        `已预写 ~/.gemini/settings.json 并持久化环境变量：gemini 命令直接走本地代理（${proxyUrl}）；代理未运行时请先启动 start-gemini-proxy。`,
+        '上游 API Key 仅存放在 ~/.gemini-cli-router/.env（GCR_TARGET_API_KEY），settings.json 与用户环境变量中为占位符。',
+        ...envPersist.notes,
+      ];
       return send(res, 200, {
         result: {
           status: 'ok',
           router: 'gcr',
           ...gcr,
-          notes: [
-            'Gemini CLI 通过 gemini-cli-router 代理转发到国内模型。',
-            '启动 Agent 请使用 GCR 改版命令：gemini-local（官方 gemini 命令不会走代理）。',
-          ],
+          files: [...(geminiCfg.files || []), ...(gcr.envFile ? [gcr.envFile] : [])],
+          envCommands: envPersist.commands,
+          notes: [...gcrNotes, ...(geminiCfg.notes || [])],
         },
       });
     }
@@ -457,6 +488,26 @@ async function writeConfig(req, res, ctx) {
   }
   if (agent.id === 'claude-code' && compat !== 'anthropic-compatible') {
     return send(res, 501, { error: 'router-integration-lands-in-M4', hint: 'Claude Code 接入 OpenAI 兼容端点需要 router（M4）' });
+  }
+
+  // gemini × Google Gemini（native）：没有 OpenAI 兼容端点，直接把 AI Studio
+  // 的 API Key 写入 ~/.gemini/settings.json，首次运行 gemini 不再弹出
+  // "Get started" 登录引导（无需先跑 gemini auth login）。
+  if (agent.id === 'gemini' && model.id === 'google') {
+    const apiKey = body.apiKey;
+    if (!apiKey) return send(res, 400, { error: 'api-key-required' });
+    ctx.secrets = [...(ctx.secrets || []), apiKey];
+    const result = await writeProviderConfig({
+      agent,
+      modelId: model.id,
+      modelName: body.modelName || model.models?.[0] || 'gemini-2.5-flash',
+      apiKey,
+      baseUrl: null,
+      geminiAuthType: 'gemini-api-key',
+      homeOverride: process.env.AGENT_GUIDE_HOME || null,
+    });
+    ctx.log?.(`config written: gemini × google -> ${result.status}`);
+    return send(res, result.status === 'ok' ? 200 : 400, { result });
   }
 
   const apiKey = body.apiKey;
@@ -484,8 +535,20 @@ async function writeConfig(req, res, ctx) {
     baseUrl: baseUrl || null,
     anthropicBase,
     wireApi: model.wireApi || 'chat',
+    homeOverride: process.env.AGENT_GUIDE_HOME || null,
   });
   ctx.log?.(`config written: ${agent.id} × ${model.id} -> ${result.status}`);
+  // Goose reads its API key from the env var named by the provider JSON's
+  // api_key_env — persist it (setx / shell profile) so goose can authenticate
+  // (same pattern as the GCR base URL persistence for gemini).
+  if (agent.id === 'goose' && result.status === 'ok' && result.envKey) {
+    const envPersist = persistUserEnvVars({ [result.envKey]: apiKey }, {
+      dryRun: body.dryRun === true,
+      homeOverride: process.env.AGENT_GUIDE_HOME || null,
+    });
+    result.envCommands = envPersist.commands;
+    result.notes = [...(result.notes || []), ...envPersist.notes];
+  }
   return send(res, result.status === 'ok' ? 200 : 400, { result });
 }
 

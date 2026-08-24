@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { startCcr, stopCcr, statusCcr, ccrNodeOk, isCcrInstalled, routerStateFile, writeGcrEnv, gcrStart, gcrStatus, gcrStop, gcrLaunchCommand, GCR_DEFAULT_PORT } from '../src/router.js';
+import { startCcr, stopCcr, statusCcr, ccrNodeOk, isCcrInstalled, routerStateFile, writeGcrEnv, gcrStart, gcrStatus, gcrStop, gcrLaunchCommand, gcrAutoStart, GCR_DEFAULT_PORT } from '../src/router.js';
 
 const tmpHome = await fs.mkdtemp(path.join(os.tmpdir(), 'ag-router-'));
 process.env.AGENT_GUIDE_HOME = tmpHome;
@@ -96,4 +96,29 @@ test('gcrLaunchCommand avoids the bash shim on win32 (node + .cjs)', () => {
   } else {
     assert.equal(cmd, 'start-gemini-proxy');
   }
+});
+
+test('gcrAutoStart dry-run reports the file paths without writing', async () => {
+  if (process.platform !== 'win32') return; // mechanism is Windows-specific
+  const r = await gcrAutoStart({ enable: true, dryRun: true, homeOverride: tmpHome });
+  assert.equal(r.ok, true);
+  assert.equal(r.dryRun, true);
+  assert.ok(r.files.script.endsWith('.agent-guide\\gcr\\start-gemini-proxy.ps1') || r.files.script.endsWith('.agent-guide/gcr/start-gemini-proxy.ps1'), 'ps1 path');
+  assert.ok(r.files.vbs.includes('Startup'), 'vbs lands in the Startup folder');
+});
+
+test('gcrAutoStart enables (writes ps1 + vbs) and disables (removes both)', async () => {
+  if (process.platform !== 'win32') return; // mechanism is Windows-specific
+  const r = await gcrAutoStart({ enable: true, homeOverride: tmpHome });
+  assert.equal(r.ok, true);
+  assert.equal(r.enabled, true);
+  const ps1 = await fs.readFile(r.files.script, 'utf8');
+  assert.ok(ps1.includes('start-gemini-proxy.cjs'), 'ps1 starts the router launcher');
+  assert.ok(ps1.includes('3458'), 'ps1 probes the default port');
+  const vbs = await fs.readFile(r.files.vbs, 'utf8');
+  assert.ok(vbs.includes('start-gemini-proxy.ps1'), 'vbs invokes the ps1 hidden');
+  const off = await gcrAutoStart({ enable: false, homeOverride: tmpHome });
+  assert.equal(off.enabled, false);
+  await assert.rejects(fs.readFile(r.files.script), 'ps1 removed');
+  await assert.rejects(fs.readFile(r.files.vbs), 'vbs removed');
 });

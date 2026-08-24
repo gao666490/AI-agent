@@ -4,6 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import net from 'node:net';
 import { stateDir } from './state.js';
+import { ensureGcrPatched } from './gcr-patch.js';
 
 /**
  * M4 router lifecycle manager.
@@ -145,6 +146,17 @@ export async function gcrStart({ port = GCR_DEFAULT_PORT, provider = 'deepseek',
     const installed = await installGcr(log);
     if (!installed.ok) return { ok: false, error: `gemini-cli-router install failed: ${installed.error}` };
   }
+  // M4.1: keep the installed router compatible with gemini-cli's `:generateContent`
+  // requests. Idempotent — a fresh `npm i -g` gets re-patched on the next start.
+  const pkg = gcrPackagePath();
+  if (pkg) {
+    try {
+      const patch = await ensureGcrPatched(path.join(pkg, 'proxy-service'), log);
+      if (patch.error) log(`gcr patch skipped: ${patch.error}`);
+    } catch (err) {
+      log(`gcr patch skipped: ${err?.message || err}`);
+    }
+  }
   const { cmd, args } = gcrLaunchCommand();
   if (!cmd || (process.platform === 'win32' && !args.length)) {
     return { ok: false, error: '无法定位 GCR 启动器（npm 全局目录未找到 gemini-cli-router）' };
@@ -180,6 +192,72 @@ export async function gcrStatus({ port = GCR_DEFAULT_PORT } = {}) {
   const running = await gcrHealthy(port);
   const installed = await isGcrInstalled();
   return { installed, running, port, healthUrl: `http://127.0.0.1:${port}/health` };
+}
+
+/** Startup-folder .vbs launcher that runs the auto-start PowerShell script hidden. */
+function gcrVbsFor(scriptFile) {
+  return `CreateObject("WScript.Shell").Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""${scriptFile}""", 0, False\r\n`;
+}
+
+/** Idempotent auto-start script: probes 3458, starts the proxy only when down. */
+const GCR_AUTOSTART_PS1 = [
+  '# agent-guide (GCR): idempotent auto-start for the gemini-cli-router proxy.',
+  '# Launched from the Startup folder (.vbs) at logon; exits fast if already running.',
+  "$ErrorActionPreference = 'SilentlyContinue'",
+  '$port = 3458',
+  '',
+  '# Quick TCP probe - already running?',
+  '$tcp = New-Object System.Net.Sockets.TcpClient',
+  'try {',
+  "  $iar = $tcp.BeginConnect('127.0.0.1', $port, $null, $null)",
+  "  if ($iar.AsyncWaitHandle.WaitOne(800)) { $tcp.EndConnect($iar) } else { throw 'timeout' }",
+  '  $running = $true',
+  '} catch { $running = $false } finally { $tcp.Close() }',
+  'if ($running) { exit 0 }',
+  '',
+  "$cjs = Join-Path $env:APPDATA 'npm\\node_modules\\gemini-cli-router\\bundle\\start-gemini-proxy.cjs'",
+  'if (-not (Test-Path $cjs)) { exit 1 }',
+  '',
+  'Start-Process node -ArgumentList $cjs -WindowStyle Hidden',
+  'exit 0',
+  '',
+].join('\n');
+
+/**
+ * Enable/disable the GCR proxy auto-start at logon (Windows).
+ *
+ * Mechanism: a hidden .vbs in the user Startup folder runs an idempotent
+ * PowerShell script (`%USERPROFILE%\.agent-guide\gcr\start-gemini-proxy.ps1`)
+ * that probes port 3458 and only starts the proxy when it is down. No admin
+ * required (user-level Startup folder) — schtasks /SC ONLOGON needs elevation
+ * on some setups, so the Startup folder is the portable default. `homeOverride`
+ * isolates tests.
+ */
+export async function gcrAutoStart({ enable = true, dryRun = false, homeOverride = null, log = () => {} } = {}) {
+  if (process.platform !== 'win32') {
+    return { ok: false, message: `gcrAutoStart 仅支持 Windows（当前 ${process.platform}）` };
+  }
+  const home = homeOverride || os.homedir();
+  const scriptFile = path.join(home, '.agent-guide', 'gcr', 'start-gemini-proxy.ps1');
+  const vbsFile = path.join(home, 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'agent-guide-gcr.vbs');
+  const files = { script: scriptFile, vbs: vbsFile };
+  if (dryRun) {
+    return { ok: true, dryRun: true, enabled: enable, files };
+  }
+  if (enable) {
+    await fs.mkdir(path.dirname(scriptFile), { recursive: true });
+    await fs.mkdir(path.dirname(vbsFile), { recursive: true });
+    await fs.writeFile(scriptFile, GCR_AUTOSTART_PS1, 'utf8');
+    await fs.writeFile(vbsFile, gcrVbsFor(scriptFile), 'utf8');
+    log(`gcr auto-start enabled: ${scriptFile} + ${vbsFile}`);
+    return { ok: true, enabled: true, files };
+  }
+  const removed = [];
+  for (const f of [scriptFile, vbsFile]) {
+    try { await fs.unlink(f); removed.push(f); } catch { /* already gone */ }
+  }
+  log(`gcr auto-start disabled${removed.length ? ` (removed: ${removed.join(', ')})` : ''}`);
+  return { ok: true, enabled: false, files, removed };
 }
 
 export function routerDir() {
