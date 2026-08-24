@@ -231,7 +231,8 @@
       "verifiedAt": "2026-01-02",
       "notes": [
         "npm @google/gemini-cli 0.55.1 已核验存在；npm 全局安装。",
-        "鉴权：gemini auth login（Google 账号）。"
+        "鉴权：支持 Google 账号登录（gemini auth login）或 API Key（向导写入 ~/.gemini/settings.json，首次运行跳过 Get started 引导）。",
+        "接国内模型时通过 gemini-cli-router（GCR）代理转发，向导会自动预写 gemini 配置。"
       ],
       "platforms": {
         "windows": {

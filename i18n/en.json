@@ -115,12 +115,18 @@
   "model.compat.unsupported": "Unsupported",
   "model.select": "Select",
 
-  "gemini.notice": "Gemini CLI uses Google-account login for Google Gemini; for CN providers it routes through gemini-cli-router (GCR) — the wizard installs and configures the proxy automatically.",
-  "gemini.title": "Google Account Login",
-  "gemini.body": "Gemini CLI authenticates with your Google account — no API key needed. Run the command below in your terminal to sign in (a browser window will open):",
-  "gemini.after": "Once signed in, launch the agent with the gemini command.",
+  "gemini.notice": "Gemini CLI can use Google-account login, or an API key that skips the first-run login prompt; CN providers route through gemini-cli-router (GCR) — the wizard installs and pre-configures the proxy automatically.",
+  "gemini.title": "Connect Google Gemini",
+  "gemini.body": "Option 1: sign in with your Google account (no key needed). Run the command below in your terminal (a browser window will open):",
+  "gemini.or": "Option 2 (recommended — skips the first-run login prompt): paste an API key from Google AI Studio:",
+  "gemini.keyLabel": "Gemini API key (optional)",
+  "gemini.key2": "Confirm key",
+  "gemini.writeKey": "Write key & skip login prompt",
+  "gemini.loginLater": "Sign in with Google instead",
+  "gemini.keyHint": "Once written, the first `gemini` run authenticates with the API key and never shows the \"Get started\" screen.",
+  "gemini.after": "After signing in or writing the key, launch the agent with the gemini command.",
 
-  "finish.gcrHint": "GCR proxy configured: launch with gemini-local (the stock gemini command will not use the CN provider proxy).",
+  "finish.gcrHint": "GCR proxy configured: `gemini` now routes through the local proxy (~/.gemini/settings.json pre-written, first-run login prompt skipped); if the proxy is not running, start start-gemini-proxy first, or use gemini-local.",
 
   "apikey.title": "API Key",
   "apikey.subtitle": "The key is written only into the agent's own config on this machine (restricted permissions) — never into wizard state or logs. You can verify it first, or skip and configure later.",

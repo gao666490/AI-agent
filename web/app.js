@@ -204,18 +204,27 @@ viewRenderers.model = async () => {
 };
 
 viewRenderers.apikey = async () => {
-  // Google Gemini model → Google account login (no API key).
-  // CN providers → normal API key flow; the server routes through GCR.
+  // Google Gemini model → two paths: Google-account login (no key) or paste an
+  // AI Studio API key (writes ~/.gemini/settings.json → skips the first-run
+  // "Get started" bootstrap). CN providers → normal API key flow via GCR.
   if (state.agentId === 'gemini' && (!state.modelId || state.modelId === 'google')) {
     return `
     <div class="card">
       <h2 data-i18n="gemini.title">${t('gemini.title')}</h2>
       <p class="subtitle" data-i18n="gemini.body">${t('gemini.body')}</p>
       <div class="code-block">$ gemini auth login</div>
+      <p class="subtitle" style="margin-top:10px" data-i18n="gemini.or">${t('gemini.or')}</p>
+      <label for="apikey1" data-i18n="gemini.keyLabel">${t('gemini.keyLabel')}</label>
+      <input type="password" id="apikey1" autocomplete="off" placeholder="AIza..." />
+      <label for="apikey2" style="margin-top:10px" data-i18n="gemini.key2">${t('gemini.key2')}</label>
+      <input type="password" id="apikey2" autocomplete="off" placeholder="AIza..." />
+      <div id="key-status" style="margin-top:10px"></div>
+      <p class="subtitle" style="margin-top:10px" data-i18n="gemini.keyHint">${t('gemini.keyHint')}</p>
       <p class="subtitle" style="margin-top:10px" data-i18n="gemini.after">${t('gemini.after')}</p>
       <div class="actions">
         <button class="btn" data-goto="model" data-i18n="common.back">${t('common.back')}</button>
-        <button class="btn primary" data-goto="finish" data-i18n="common.continue">${t('common.continue')}</button>
+        <button class="btn primary" id="btn-write" data-i18n="gemini.writeKey">${t('gemini.writeKey')}</button>
+        <button class="btn" id="btn-skip" data-i18n="gemini.loginLater">${t('gemini.loginLater')}</button>
       </div>
     </div>`;
   }

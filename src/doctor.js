@@ -13,6 +13,7 @@ const CONFIG_PATHS = {
   claude: (home) => path.join(home, '.claude', 'settings.json'),
   opencode: (home) => path.join(home, '.config', 'opencode', 'config.json'),
   hermes: (home) => path.join(home, '.hermes', '.env'),
+  gemini: (home) => path.join(home, '.gemini', 'settings.json'),
 };
 
 /**
